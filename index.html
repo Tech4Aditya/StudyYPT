@@ -80,8 +80,8 @@
             <h1 id="auth-title" class="text-3xl font-bold text-white text-glow font-orbitron mb-6 text-center">Login</h1>
             
             <form id="auth-form" class="space-y-4">
-                <input type="text" id="username-input" placeholder="Username" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
-                <input type="email" id="email-input" placeholder="Email (needed for account creation)" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500 hidden">
+                <input type="text" id="username-input" placeholder="Choose a Username" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500 hidden">
+                <input type="email" id="email-input" placeholder="Email" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
                 <input type="password" id="password-input" placeholder="Password" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
                 <button type="submit" id="auth-submit-btn" class="cyber-button w-full bg-cyan-500/20 text-cyan-300 font-bold py-2 px-6 rounded-lg">Sign In</button>
             </form>
@@ -115,7 +115,9 @@
                     <div class="flex items-center space-x-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-700"><i class="fas fa-database text-purple-400"></i><span id="header-user-sp" class="font-bold text-md font-orbitron">0</span></div>
                     <div class="flex items-center space-x-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-700"><i class="fas fa-coins text-yellow-400"></i><span id="header-user-coins" class="font-bold text-md font-orbitron">0</span></div>
                     <div class="flex items-center space-x-3">
-                        <div id="header-user-level" class="font-bold text-md font-orbitron border-2 border-cyan-400/50 px-2 rounded-md">LVL 1</div>
+                        <div id="header-user-level" class="font-bold text-md font-orbitron bg-cyan-900/50 border-2 border-cyan-400/50 px-3 py-1 rounded-lg flex items-center gap-2">
+                            <i class="fas fa-star text-yellow-300"></i><span id="level-text">LVL 1</span>
+                        </div>
                         <div class="w-32 bg-gray-700 rounded-full h-2.5 border border-gray-600"><div id="header-xp-bar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full xp-bar-progress"></div></div>
                     </div>
                     <div class="flex items-center space-x-3">
@@ -133,9 +135,10 @@
                                 <img id="dashboard-profile-pic" class="w-24 h-24 rounded-full mx-auto border-4 border-cyan-400/50 mb-4 object-cover">
                                 <h3 id="dashboard-profile-name" class="text-2xl font-bold text-white font-orbitron"></h3>
                                 <p id="dashboard-profile-league" class="text-cyan-300 font-semibold text-glow"></p>
-                                <div class="mt-4 text-left grid grid-cols-2 gap-4 text-gray-300">
+                                <div class="mt-4 text-left grid grid-cols-2 gap-x-4 gap-y-2 text-gray-300">
                                     <p class="cyber-card p-2 rounded"><i class="fas fa-calendar-day w-5 mr-1 text-cyan-400"></i> XP Today: <strong id="dashboard-today-xp" class="text-white">0</strong></p>
                                     <p class="cyber-card p-2 rounded"><i class="fas fa-fire w-5 mr-1 text-cyan-400"></i> Total XP: <strong id="dashboard-total-xp" class="text-white">0</strong></p>
+                                    <p class="cyber-card p-2 rounded col-span-2"><i class="fas fa-gem w-5 mr-1 text-cyan-400"></i> Pass Tier: <strong id="dashboard-pass-tier" class="text-white">0 / 10</strong></p>
                                 </div>
                             </div>
                             <div class="quote-container cyber-card p-6 rounded-lg">
@@ -224,10 +227,13 @@
                 </div>
 
                 <div id="pass" class="page hidden">
-                    <h2 class="text-4xl font-bold text-white mb-2 font-orbitron">Season Pass</h2>
+                    <div class="flex justify-between items-center mb-6">
+                         <h2 class="text-4xl font-bold text-white font-orbitron">Season Pass</h2>
+                         <h3 class="text-3xl font-bold text-white font-orbitron">Season <span id="season-number">1</span></h3>
+                    </div>
                     <p class="text-gray-400 mb-6">Gain monthly XP to unlock exclusive rewards. Resets monthly.</p>
                     <div class="w-full bg-black/50 rounded-full h-6 border border-cyan-300/30 mb-8 cyber-card p-1">
-                        <div id="pass-progress-bar" class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 h-full rounded-full flex items-center justify-center text-sm font-bold xp-bar-progress" style="width: 0%;"></div>
+                        <div id="pass-progress-bar" class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 h-full rounded-full flex items-center justify-center text-sm font-bold text-white xp-bar-progress" style="width: 0%;"></div>
                     </div>
                     <div id="study-pass-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
                 </div>
@@ -361,7 +367,9 @@
             { xp: 7500, type: 'sp', value: 60 },
             { xp: 10000, type: 'avatar', value: 'avatar_brain' },
             { xp: 15000, type: 'coins', value: 400 },
-            { xp: 20000, type: 'avatar', value: 'avatar_atom' }
+            { xp: 20000, type: 'avatar', value: 'avatar_atom' },
+            { xp: 25000, type: 'sp', value: 150 },
+            { xp: 35000, type: 'avatar', value: 'avatar_globe' }
         ];
         let botsData = [
             { name: 'Cipher', level: 15, monthlyXP: 12540, profilePicUrl: 'https://placehold.co/40x40/9333ea/ffffff?text=C' }, 
@@ -416,27 +424,20 @@
 
         async function handleAuthFormSubmit(e) {
             e.preventDefault();
-            const username = document.getElementById('username-input').value.trim().toLowerCase();
             const password = document.getElementById('password-input').value;
-
-            if (!username || !password) {
-                alert("Please fill in all fields.");
-                return;
-            }
+            const email = document.getElementById('email-input').value.trim();
+            const username = document.getElementById('username-input').value.trim().toLowerCase();
 
             try {
                 if (isLoginMode) {
-                    const usernameRef = doc(db, `usernames/${username}`);
-                    const usernameSnap = await getDoc(usernameRef);
-                    if (!usernameSnap.exists()) {
-                        throw new Error("Username not found.");
+                    if (!email || !password) {
+                        alert("Please provide an email and password to sign in.");
+                        return;
                     }
-                    const usernameDocData = usernameSnap.data();
-                    await signInWithEmailAndPassword(auth, usernameDocData.email, password);
+                    await signInWithEmailAndPassword(auth, email, password);
                 } else {
-                    const email = document.getElementById('email-input').value;
-                    if(!email) {
-                        alert("Please provide an email to create an account.");
+                    if (!username || !email || !password) {
+                        alert("Please fill in all fields to create an account.");
                         return;
                     }
                     const usernameRef = doc(db, `usernames/${username}`);
@@ -450,7 +451,7 @@
             } catch (error) {
                 console.error("Auth error:", error);
                  if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.message === "Username not found.") {
-                    alert('Incorrect username or password.');
+                    alert('Incorrect email or password.');
                 } else if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
                     alert("Authentication failed: Permission Denied.\n\nThis is a Firebase Security Rule issue.\n\nPlease go to your Firebase Console -> Firestore Database -> Rules and add the following rule inside the `match /databases/{database}/documents { ... }` block:\n\nmatch /usernames/{username} {\n  allow read, create: if true;\n}\n\nThis allows the app to check if a username is available before creating an account.");
                 } else {
@@ -458,13 +459,22 @@
                 }
             }
         }
+
+        function getSeasonInfo() {
+            const startDate = new Date('2025-10-01T00:00:00Z');
+            const now = new Date();
+            const monthsDiff = (now.getFullYear() - startDate.getFullYear()) * 12 + (now.getMonth() - startDate.getMonth());
+            const currentSeason = monthsDiff + 1;
+            const currentSeasonId = `${now.getFullYear()}-${now.getMonth()}`; 
+            return { number: currentSeason, id: currentSeasonId };
+        }
         
         // --- PERSISTENCE (Firestore) ---
         async function loadUserData(user) {
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
                 if (!docSnap.exists()) {
-                    const username = user.email.split('@')[0];
+                    const username = user.email ? user.email.split('@')[0] : `operative${Date.now()}`;
                     await createInitialUserData(user, username);
                     return; 
                 }
@@ -473,12 +483,25 @@
                 userData.tasksCompletedToday = userData.tasksCompletedToday || 0;
 
                 const today = new Date().toDateString();
+                const seasonInfo = getSeasonInfo();
+
+                let needsSave = false;
                 if (!userData.lastLoginDate || new Date(userData.lastLoginDate).toDateString() !== today) {
                     userData.todayXP = 0;
                     userData.tasksCompletedToday = 0;
                     userData.lastLoginDate = today;
-                    await saveUserData(); 
+                    needsSave = true;
                 }
+
+                if (userData.lastSeasonId !== seasonInfo.id) {
+                    userData.monthlyXP = 0;
+                    userData.studyPassProgress = { claimedTiers: [] };
+                    userData.lastSeasonId = seasonInfo.id;
+                    needsSave = true;
+                }
+
+                if(needsSave) await saveUserData();
+
 
                 if (!userData.setupComplete) {
                     document.getElementById('setup-display-name').value = userData.displayName;
@@ -512,6 +535,7 @@
 
         async function createInitialUserData(user, username) {
             const today = new Date().toDateString();
+            const seasonInfo = getSeasonInfo();
             const newUserData = {
                 uid: user.uid,
                 displayName: username,
@@ -527,7 +551,8 @@
                 tasks: {}, purchasedItems: [], todayXP: 0, tasksCompletedToday: 0, achievements: MOCK_ACHIEVEMENTS,
                 studyPassProgress: { claimedTiers: [] },
                 lastLoginDate: today,
-                lastQuoteDate: today
+                lastQuoteDate: today,
+                lastSeasonId: seasonInfo.id
             };
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             await setDoc(userRef, newUserData);
@@ -696,18 +721,26 @@
             if (!userData) return;
             const currentLeague = LEAGUES.slice().reverse().find(l => userData.monthlyXP >= l.minXP) || LEAGUES[0];
             const pfpUrl = userData.profilePicUrl || `https://placehold.co/128x128/01040a/00ffff?text=${userData.displayName ? userData.displayName.charAt(0).toUpperCase() : '?'}`;
+            const seasonInfo = getSeasonInfo();
 
             document.getElementById('header-user-name').textContent = userData.displayName || 'Operative';
             document.getElementById('dashboard-profile-name').textContent = userData.displayName || 'Operative';
             document.getElementById('header-user-coins').textContent = userData.coins;
             document.getElementById('header-user-sp').textContent = userData.sp;
-            document.getElementById('header-user-level').textContent = `LVL ${userData.level}`;
+            document.getElementById('level-text').textContent = `LVL ${userData.level}`;
             document.getElementById('dashboard-total-xp').textContent = userData.xp;
             document.getElementById('dashboard-today-xp').textContent = userData.todayXP;
+            document.getElementById('season-number').textContent = seasonInfo.number;
 
             const xpForNextLevel = Math.floor(Math.pow(userData.level, 1.2) * 100);
             const percentage = xpForNextLevel > 0 ? (userData.xp / xpForNextLevel) * 100 : 0;
             document.getElementById('header-xp-bar').style.width = `${Math.min(100, percentage)}%`;
+
+            const currentTierIndex = STUDY_PASS_REWARDS.slice().reverse().findIndex(tier => userData.monthlyXP >= tier.xp);
+            const totalTiers = STUDY_PASS_REWARDS.length;
+            const displayTier = currentTierIndex === -1 ? 0 : totalTiers - currentTierIndex;
+            document.getElementById('dashboard-pass-tier').textContent = `${displayTier} / ${totalTiers}`;
+
 
             ['header-profile-pic', 'dashboard-profile-pic', 'profile-pic'].forEach(id => document.getElementById(id).src = pfpUrl);
             
@@ -1077,7 +1110,8 @@
             
             document.getElementById('auth-toggle-text').addEventListener('click', () => {
                 isLoginMode = !isLoginMode;
-                document.getElementById('email-input').classList.toggle('hidden', isLoginMode);
+                document.getElementById('username-input').classList.toggle('hidden', isLoginMode);
+                document.getElementById('email-input').placeholder = isLoginMode ? 'Email' : 'Email (for account recovery)';
                 document.getElementById('auth-title').textContent = isLoginMode ? 'Login' : 'Create Account';
                 document.getElementById('auth-submit-btn').textContent = isLoginMode ? 'Sign In' : 'Create Account';
                 document.getElementById('auth-toggle-text').textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Sign In";
