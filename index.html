@@ -64,7 +64,6 @@
         .main-content-area::-webkit-scrollbar { width: 8px; }
         .main-content-area::-webkit-scrollbar-track { background: transparent; }
         .main-content-area::-webkit-scrollbar-thumb { background-color: rgba(0, 255, 255, 0.3); border-radius: 4px; border: 1px solid rgba(0, 255, 255, 0.5); }
-        .profile-avatar-upload { cursor: pointer; }
     </style>
 </head>
 <body class="text-gray-200 antialiased">
@@ -163,15 +162,12 @@
                      <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Operative Profile</h2>
                     <div class="cyber-card p-8 rounded-lg flex items-center space-x-8">
                         <div class="relative group">
-                            <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="profile-avatar-upload w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
-                            <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                                <i class="fas fa-camera text-3xl"></i>
-                            </div>
-                            <input type="file" id="avatar-upload-input" class="hidden" accept="image/*">
+                            <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
                         </div>
                         <div>
                             <input id="profile-name-input" class="bg-gray-900/50 text-4xl font-bold text-white p-2 rounded-lg border border-cyan-300/30 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-orbitron" value="User">
                             <button id="update-profile-btn" class="cyber-button bg-green-500/20 border-green-400 text-green-300 font-bold py-2 px-4 rounded-lg ml-4">Save Changes</button>
+                             <button id="sign-out-btn" class="cyber-button bg-red-500/20 border-red-400 text-red-300 font-bold py-2 px-4 rounded-lg ml-2">Sign Out</button>
                             <p class="text-gray-400 mt-2">Member since: <span id="member-since"></span></p>
                         </div>
                     </div>
@@ -185,35 +181,11 @@
                     <div class="w-full bg-black/50 rounded-full h-6 border border-cyan-300/30 mb-8 cyber-card p-1">
                         <div id="pass-progress-bar" class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 h-full rounded-full flex items-center justify-center text-sm font-bold xp-bar-progress" style="width: 0%;"></div>
                     </div>
-                    <div id="study-pass-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
-                         <div class="cyber-card p-4 rounded-lg text-center">
-                            <h4 class="font-bold text-xl text-white">Tier 1</h4>
-                            <p class="text-cyan-300">500 XP</p>
-                            <button class="cyber-button mt-2 bg-green-500/20 text-green-300 py-1 px-3 rounded-lg">Claim</button>
-                        </div>
-                         <div class="cyber-card p-4 rounded-lg text-center">
-                            <h4 class="font-bold text-xl text-white">Tier 2</h4>
-                            <p class="text-yellow-300">100 Coins</p>
-                            <button class="cyber-button mt-2 bg-green-500/20 text-green-300 py-1 px-3 rounded-lg">Claim</button>
-                        </div>
-                    </div>
+                    <div id="study-pass-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
                 </div>
                 <div id="shop" class="page hidden">
                      <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Supply Depot</h2>
-                    <div id="shop-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        <div class="cyber-card p-6 rounded-lg text-center">
-                            <i class="fas fa-bolt text-5xl text-yellow-400 mb-4"></i>
-                            <h3 class="font-bold text-xl text-white">XP Boost (24hr)</h3>
-                            <p class="text-gray-400 mb-4">+25% XP from missions for 24 hours.</p>
-                            <button class="cyber-button bg-purple-500/20 text-purple-300 font-bold py-2 px-4 rounded-lg"><i class="fas fa-database mr-2"></i>200 SP</button>
-                        </div>
-                         <div class="cyber-card p-6 rounded-lg text-center">
-                            <i class="fas fa-sack-dollar text-5xl text-green-400 mb-4"></i>
-                            <h3 class="font-bold text-xl text-white">Coin Pack</h3>
-                            <p class="text-gray-400 mb-4">Receive 500 bonus coins instantly.</p>
-                            <button class="cyber-button bg-purple-500/20 text-purple-300 font-bold py-2 px-4 rounded-lg"><i class="fas fa-database mr-2"></i>150 SP</button>
-                        </div>
-                    </div>
+                    <div id="shop-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
                 </div>
             </main>
         </div>
@@ -259,22 +231,19 @@
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
-
+        
         // --- FIREBASE CONFIGURATION ---
-        // REPLACE THIS OBJECT WITH YOUR ACTUAL FIREBASE CONFIG FROM THE FIREBASE CONSOLE
-        // Go to Firebase Console -> Project settings -> Your apps -> Web app -> Config
         const firebaseConfig = {
-          apiKey: "AIzaSyDv_NELQ4t4vDGsjjGYjjClt7tw1PXiNjg", // e.g., "AIzaSyC0-YOUR-API-KEY"
-          authDomain: "studyypt-1fa01.firebaseapp.com", // e.g., "your-project-id.firebaseapp.com"
-          projectId: "studyypt-1fa01", // e.g., "your-project-id"
-          storageBucket: "studyypt-1fa01.firebasestorage.app", // e.g., "your-project-id.appspot.com"
-          messagingSenderId: "366344997103", // e.g., "1234567890"
-          appId: 1:366344997103:web:2021dd4fab722caf2b331a", 
-          measurementId: "G-8L0G02Q5WE" // Optional
+          apiKey: "AIzaSyDv_NELQ4t4vDGsjjGYjjClt7tw1PXiNjg",
+          authDomain: "studyypt-1fa01.firebaseapp.com",
+          projectId: "studyypt-1fa01",
+          storageBucket: "studyypt-1fa01.appspot.com",
+          messagingSenderId: "366344997103",
+          appId: "1:366344997103:web:2021dd4fab722caf2b331a",
+          measurementId: "G-8L0G02Q5WE"
         };
         
-        const appId = firebaseConfig.appId.split(':')[1]; // Extract app ID for Firestore paths
+        const appId = "studyypt-1fa01"; // Using projectId as a simpler unique ID
 
         // --- DUMMY DATA & CONSTANTS ---
         const QUOTES = [ { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" }, { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" }, { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill"} ];
@@ -308,16 +277,8 @@
 
 
         // --- FIREBASE & STATE ---
-        let app, auth, db, storage;
-        let userData = {
-            displayName: 'Operative',
-            profilePicUrl: 'https://placehold.co/128x128/01040a/00ffff?text=U',
-            level: 1, xp: 0, coins: 0, sp: 0, monthlyXP: 0, todayXP: 0,
-            tasks: [], achievements: MOCK_ACHIEVEMENTS,
-            studyPassProgress: { claimedTiers: [] },
-            createdAt: new Date().toISOString(),
-            lastQuoteDate: null
-        };
+        let app, auth, db;
+        let userData;
         let botsData = [
             { name: 'Cipher', level: 15, monthlyXP: 12540, profilePicUrl: 'https://placehold.co/40x40/9333ea/ffffff?text=C' }, 
             { name: 'Glitch', level: 12, monthlyXP: 9870, profilePicUrl: 'https://placehold.co/40x40/be123c/ffffff?text=G' },
@@ -328,11 +289,10 @@
         
         // --- INITIALIZATION ---
         window.onload = () => {
-            if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+             if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                storage = getStorage(app);
                 setupAuthObserver();
             } else {
                 document.getElementById('login-status').textContent = 'Please configure Firebase API keys in the script.';
@@ -352,6 +312,7 @@
                 } else {
                     document.getElementById('login-view').classList.remove('hidden');
                     document.getElementById('app-view').classList.add('hidden');
+                    userData = null;
                 }
             });
         }
@@ -365,6 +326,16 @@
                 alert("Failed to sign in with Google: " + error.message);
             }
         }
+        
+        async function signOutUser() {
+            try {
+                await signOut(auth);
+                console.log("User signed out successfully.");
+            } catch (error) {
+                console.error("Sign out failed:", error);
+                alert("Sign out failed: " + error.message);
+            }
+        }
 
         // --- PERSISTENCE (Firestore) ---
         async function loadUserData(user) {
@@ -372,12 +343,11 @@
             unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
                 if (docSnap.exists()) {
                     userData = docSnap.data();
-                    // Reset todayXP if new day
                     const today = new Date().toDateString();
                     if (!userData.lastLoginDate || new Date(userData.lastLoginDate).toDateString() !== today) {
                         userData.todayXP = 0;
                         userData.lastLoginDate = today;
-                        await saveUserData(); // Save the reset
+                        await saveUserData(); 
                     }
                      if (!userData.lastQuoteDate || new Date(userData.lastQuoteDate).toDateString() !== today) {
                         updateDailyQuote();
@@ -450,10 +420,10 @@
             userData.monthlyXP += task.xp;
             userData.todayXP += task.xp;
             
-            const xpForNextLevel = userData.level * 100; // XP needed for next level
+            const xpForNextLevel = userData.level * 100;
             if (userData.xp + task.xp >= xpForNextLevel) {
                 userData.level++;
-                userData.xp = (userData.xp + task.xp) - xpForNextLevel; // Carry over excess XP
+                userData.xp = (userData.xp + task.xp) - xpForNextLevel;
                 checkAchievements('level_5');
             } else {
                 userData.xp += task.xp;
@@ -466,28 +436,12 @@
 
             saveUserData();
         }
-
-        async function uploadAvatar(file) {
-            if (!auth.currentUser) return;
-            const storageRef = ref(storage, `artifacts/${appId}/users/${auth.currentUser.uid}/profile.jpg`);
-            try {
-                const snapshot = await uploadBytes(storageRef, file);
-                const downloadURL = await getDownloadURL(snapshot.ref);
-                userData.profilePicUrl = downloadURL;
-                await saveUserData();
-                alert("Avatar uploaded successfully!");
-            } catch (error) {
-                console.error("Error uploading file:", error);
-                alert("Failed to upload avatar: " + error.message);
-            }
-        }
         
         function checkAchievements(achievementId) {
             const achievement = userData.achievements.find(a => a.id === achievementId);
             if (achievement && !achievement.achieved) {
                 achievement.achieved = true;
                 alert(`Achievement Unlocked: ${achievement.name}!`);
-                // Optionally add rewards for achievements here
             }
         }
 
@@ -506,7 +460,6 @@
 
             if (tier.coins) userData.coins += tier.coins;
             if (tier.sp) userData.sp += tier.sp;
-            // Handle titles or other rewards here
             if (tier.title) alert(`New Title Unlocked: ${tier.title}!`);
 
             userData.studyPassProgress.claimedTiers.push(tierIndex);
@@ -519,12 +472,10 @@
             if (!item) return;
 
             if (item.currency === 'coins' && userData.coins < item.cost) {
-                alert("Not enough coins!");
-                return;
+                alert("Not enough coins!"); return;
             }
             if (item.currency === 'sp' && userData.sp < item.cost) {
-                alert("Not enough Study Points!");
-                return;
+                alert("Not enough Study Points!"); return;
             }
 
             if (item.currency === 'coins') userData.coins -= item.cost;
@@ -549,10 +500,8 @@
             document.getElementById('dashboard-total-xp').textContent = userData.xp;
             document.getElementById('dashboard-today-xp').textContent = userData.todayXP;
 
-            const xpForCurrentLevel = (userData.level - 1) * 100;
             const xpForNextLevel = userData.level * 100;
-            const currentLevelXPProgress = userData.xp; // This is the XP within the current level
-            const percentage = (currentLevelXPProgress / xpForNextLevel) * 100;
+            const percentage = (userData.xp / xpForNextLevel) * 100;
             document.getElementById('header-xp-bar').style.width = `${Math.min(100, percentage)}%`;
 
             ['header-profile-pic', 'dashboard-profile-pic', 'profile-pic'].forEach(id => document.getElementById(id).src = pfpUrl);
@@ -562,7 +511,7 @@
             document.getElementById('profile-name-input').value = userData.displayName;
 
             renderTasks();
-            renderLeaderboard(); // Make sure leaderboard is updated
+            renderLeaderboard();
             renderShop();
             renderStudyPass();
             renderAchievements();
@@ -603,14 +552,10 @@
             const snapshot = await getDocs(leaderboardCol);
             const usersFromDB = snapshot.docs.map(doc => doc.data());
 
-            // Merge current user's data if not already in DB snapshot (e.g., first load before Firestore updates)
             if (auth.currentUser && !usersFromDB.some(u => u.uid === auth.currentUser.uid)) {
                 usersFromDB.push({
-                    displayName: userData.displayName,
-                    profilePicUrl: userData.profilePicUrl,
-                    monthlyXP: userData.monthlyXP,
-                    level: userData.level,
-                    uid: userData.uid
+                    displayName: userData.displayName, profilePicUrl: userData.profilePicUrl,
+                    monthlyXP: userData.monthlyXP, level: userData.level, uid: userData.uid
                 });
             }
 
@@ -634,8 +579,7 @@
         function renderShop() {
             const container = document.getElementById('shop-container');
             if (!container) return;
-            container.innerHTML = ''; // Clear previous content
-
+            container.innerHTML = '';
             SHOP_ITEMS.forEach(item => {
                 const itemEl = document.createElement('div');
                 itemEl.className = 'cyber-card p-6 rounded-lg text-center';
@@ -659,7 +603,7 @@
 
             const totalXPNeeded = STUDY_PASS_REWARDS[STUDY_PASS_REWARDS.length - 1].xp;
             const currentPassXP = userData.monthlyXP;
-            const passPercentage = (currentPassXP / totalXPNeeded) * 100;
+            const passPercentage = totalXPNeeded > 0 ? (currentPassXP / totalXPNeeded) * 100 : 0;
             document.getElementById('pass-progress-bar').style.width = `${Math.min(100, passPercentage)}%`;
             document.getElementById('pass-progress-bar').textContent = `${Math.min(totalXPNeeded, currentPassXP)} / ${totalXPNeeded} XP`;
 
@@ -688,7 +632,7 @@
 
         function renderAchievements() {
             const container = document.getElementById('achievements-container');
-            if (!container) return;
+            if (!container || !userData.achievements) return;
             container.innerHTML = '';
 
             userData.achievements.forEach(achievement => {
@@ -706,10 +650,9 @@
 
         function updateDailyQuote() {
             const today = new Date().toDateString();
-            if (userData.lastQuoteDate === today) {
-                // If quote already set for today, retrieve it (or keep previous)
-                document.getElementById('quote-text').textContent = userData.currentQuoteText || QUOTES[0].text;
-                document.getElementById('quote-author').textContent = userData.currentQuoteAuthor || QUOTES[0].author;
+            if (userData.lastQuoteDate === today && userData.currentQuoteText) {
+                document.getElementById('quote-text').textContent = userData.currentQuoteText;
+                document.getElementById('quote-author').textContent = userData.currentQuoteAuthor;
                 return;
             }
 
@@ -718,17 +661,18 @@
             document.getElementById('quote-text').textContent = quote.text;
             document.getElementById('quote-author').textContent = `- ${quote.author}`;
             
-            // Save current quote and date to user data
             userData.currentQuoteText = quote.text;
             userData.currentQuoteAuthor = quote.author;
             userData.lastQuoteDate = today;
-            saveUserData(); // This will trigger UI update and save
+            if (auth.currentUser) saveUserData();
         }
 
 
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
             document.getElementById('google-sign-in-btn').addEventListener('click', signInWithGoogle);
+            document.getElementById('sign-out-btn').addEventListener('click', signOutUser);
+
 
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', e => {
@@ -740,9 +684,8 @@
                     e.currentTarget.classList.add('p-3', 'bg-cyan-500/20', 'rounded-lg');
                     document.getElementById('page-title').textContent = e.currentTarget.querySelector('.tooltip').textContent;
                     
-                    // Specific page render calls
                     if (targetId === 'leaderboard') renderLeaderboard();
-                    if (targetId === 'profile') renderAchievements(); // Rerender achievements too
+                    if (targetId === 'profile') renderAchievements(); 
                     if (targetId === 'pass') renderStudyPass();
                     if (targetId === 'shop') renderShop();
                 });
