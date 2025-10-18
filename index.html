@@ -467,6 +467,7 @@
         let unsubscribeUser; 
         let currentCalendarDate = new Date();
         let allUsersCache = [];
+        let allUsersListenerAttached = false;
 
         // --- INITIALIZATION ---
         window.onload = () => {
@@ -475,7 +476,6 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
                 setupAuthObserver();
-                fetchAllUsers();
             } else {
                 document.getElementById('login-view').innerHTML = '<p class="text-red-500 text-center">Firebase config is missing or invalid. Please check the script.</p>';
             }
@@ -494,6 +494,9 @@
                     if (!document.getElementById('leagues').classList.contains('hidden')) {
                         renderLeaguesPage();
                     }
+                     if (!document.getElementById('social').classList.contains('hidden')) {
+                        renderSocialPage();
+                    }
                 },
                 (error) => {
                     console.error("Error fetching all users:", error);
@@ -508,12 +511,21 @@
             onAuthStateChanged(auth, user => {
                 if (unsubscribeUser) unsubscribeUser(); 
                 if (user) {
+                    // User is authenticated, it's safe to fetch public profiles now.
+                    // Only attach the listener once per session.
+                    if (!allUsersListenerAttached) {
+                        fetchAllUsers();
+                        allUsersListenerAttached = true;
+                    }
                     loadUserData(user);
                 } else {
                     document.getElementById('login-view').classList.remove('hidden');
                     document.getElementById('app-view').classList.add('hidden');
                     document.getElementById('first-time-setup-modal').style.display = 'none';
                     userData = null;
+                    // When the user signs out, reset this flag so the listener
+                    // is re-attached if a new user signs in.
+                    allUsersListenerAttached = false;
                 }
             });
         }
@@ -1250,6 +1262,213 @@
                 grid.appendChild(dayEl);
             }
         }
+        
+        // --- SOCIAL FEATURES ---
+        function renderSocialPage() {
+            if (!userData) return;
+
+            const requestsContainer = document.getElementById('friend-requests-container');
+            const friendsContainer = document.getElementById('friends-list-container');
+            
+            // Render Friend Requests
+            requestsContainer.innerHTML = '';
+            const receivedRequests = userData.friendRequests?.received || [];
+            if (receivedRequests.length === 0) {
+                requestsContainer.innerHTML = '<p class="text-gray-400">No new friend requests.</p>';
+            } else {
+                receivedRequests.forEach(userId => {
+                    const user = allUsersCache.find(u => u.id === userId);
+                    if (user) {
+                        const requestEl = document.createElement('div');
+                        requestEl.className = 'cyber-card p-3 rounded-lg flex items-center justify-between';
+                        requestEl.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <img src="${user.profilePicUrl}" class="w-10 h-10 rounded-full object-cover">
+                                <span class="font-semibold">${user.displayName}</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <button class="accept-friend-btn cyber-button text-sm bg-green-500/20 text-green-300 py-1 px-3 rounded-md" data-user-id="${user.id}"><i class="fas fa-check"></i></button>
+                                <button class="decline-friend-btn cyber-button text-sm bg-red-500/20 text-red-300 py-1 px-3 rounded-md" data-user-id="${user.id}"><i class="fas fa-times"></i></button>
+                            </div>
+                        `;
+                        requestsContainer.appendChild(requestEl);
+                    }
+                });
+            }
+
+            // Render Friends List
+            friendsContainer.innerHTML = '';
+            const friends = userData.friends || [];
+            if (friends.length === 0) {
+                friendsContainer.innerHTML = '<p class="text-gray-400">Find operatives to add them as friends.</p>';
+            } else {
+                friends.forEach(userId => {
+                    const user = allUsersCache.find(u => u.id === userId);
+                     if (user) {
+                        const friendEl = document.createElement('div');
+                        friendEl.className = 'cyber-card p-3 rounded-lg flex items-center justify-between';
+                        friendEl.innerHTML = `
+                            <div class="flex items-center gap-3">
+                                <img src="${user.profilePicUrl}" class="w-10 h-10 rounded-full object-cover">
+                                <span class="font-semibold">${user.displayName}</span>
+                            </div>
+                             <button class="view-profile-btn cyber-button text-sm bg-cyan-500/20 text-cyan-300 py-1 px-3 rounded-md" data-user-id="${user.id}">View Profile</button>
+                        `;
+                        friendsContainer.appendChild(friendEl);
+                    }
+                });
+            }
+        }
+
+        async function sendFriendRequest(receiverId) {
+            if (!auth.currentUser || auth.currentUser.uid === receiverId) return;
+
+            const currentUserRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
+            const receiverUserRef = doc(db, `artifacts/${appId}/users/${receiverId}/profile/data`);
+
+            try {
+                // Add receiver to sender's "sent" list
+                await updateDoc(currentUserRef, {
+                    'friendRequests.sent': arrayUnion(receiverId)
+                });
+                // Add sender to receiver's "received" list
+                await updateDoc(receiverUserRef, {
+                    'friendRequests.received': arrayUnion(auth.currentUser.uid)
+                });
+                alert('Friend request sent!');
+                document.getElementById('user-search-input').dispatchEvent(new Event('keyup')); // Refresh search results
+            } catch(e) {
+                console.error("Error sending friend request: ", e);
+                alert("Could not send friend request.");
+            }
+        }
+        
+        async function acceptFriendRequest(requesterId) {
+            if (!auth.currentUser) return;
+            const currentUserRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
+            const requesterUserRef = doc(db, `artifacts/${appId}/users/${requesterId}/profile/data`);
+
+            try {
+                // For current user: remove from received, add to friends
+                await updateDoc(currentUserRef, {
+                    'friendRequests.received': arrayRemove(requesterId),
+                    'friends': arrayUnion(requesterId)
+                });
+                // For requester: remove from sent, add to friends
+                 await updateDoc(requesterUserRef, {
+                    'friendRequests.sent': arrayRemove(auth.currentUser.uid),
+                    'friends': arrayUnion(auth.currentUser.uid)
+                });
+            } catch(e) {
+                console.error("Error accepting friend request: ", e);
+            }
+        }
+
+        async function declineFriendRequest(requesterId) {
+             if (!auth.currentUser) return;
+            const currentUserRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
+            const requesterUserRef = doc(db, `artifacts/${appId}/users/${requesterId}/profile/data`);
+
+            try {
+                 // For current user: remove from received
+                await updateDoc(currentUserRef, {
+                    'friendRequests.received': arrayRemove(requesterId)
+                });
+                // For requester: remove from sent
+                 await updateDoc(requesterUserRef, {
+                    'friendRequests.sent': arrayRemove(auth.currentUser.uid)
+                });
+            } catch(e) {
+                console.error("Error declining friend request: ", e);
+            }
+        }
+
+        function handleUserSearch(e) {
+            const searchTerm = e.target.value.toLowerCase();
+            const resultsContainer = document.getElementById('user-search-results');
+            resultsContainer.innerHTML = '';
+            if (searchTerm.length < 2) return;
+
+            const results = allUsersCache.filter(user => 
+                user.displayName.toLowerCase().includes(searchTerm) &&
+                user.id !== auth.currentUser.uid
+            );
+
+            if (results.length === 0) {
+                resultsContainer.innerHTML = '<p class="text-gray-400">No operatives found.</p>';
+            } else {
+                results.slice(0, 5).forEach(user => {
+                    const isFriend = userData.friends?.includes(user.id);
+                    const sentRequest = userData.friendRequests?.sent?.includes(user.id);
+                    const receivedRequest = userData.friendRequests?.received?.includes(user.id);
+
+                    let buttonHTML = '';
+                    if (isFriend) {
+                        buttonHTML = `<button class="cyber-button text-sm bg-gray-500/20 text-gray-300 py-1 px-3 rounded-md" disabled>Friends</button>`;
+                    } else if (sentRequest) {
+                        buttonHTML = `<button class="cyber-button text-sm bg-gray-500/20 text-gray-300 py-1 px-3 rounded-md" disabled>Pending</button>`;
+                    } else if (receivedRequest) {
+                        buttonHTML = `<button class="accept-friend-btn cyber-button text-sm bg-green-500/20 text-green-300 py-1 px-3 rounded-md" data-user-id="${user.id}">Accept Request</button>`;
+                    } else {
+                        buttonHTML = `<button class="add-friend-btn cyber-button text-sm bg-cyan-500/20 text-cyan-300 py-1 px-3 rounded-md" data-user-id="${user.id}">Add Friend</button>`;
+                    }
+
+                    const resultEl = document.createElement('div');
+                    resultEl.className = 'cyber-card p-3 rounded-lg flex items-center justify-between';
+                    resultEl.innerHTML = `
+                         <div class="flex items-center gap-3">
+                            <img src="${user.profilePicUrl}" class="w-10 h-10 rounded-full object-cover">
+                            <span class="font-semibold">${user.displayName}</span>
+                        </div>
+                        <div>
+                            <button class="view-profile-btn cyber-button text-sm bg-blue-500/20 text-blue-300 py-1 px-3 rounded-md mr-2" data-user-id="${user.id}">Profile</button>
+                            ${buttonHTML}
+                        </div>
+                    `;
+                    resultsContainer.appendChild(resultEl);
+                });
+            }
+        }
+
+        function renderUserProfileModal(userId) {
+            const user = allUsersCache.find(u => u.id === userId);
+            if (!user) return;
+            
+            const modal = document.getElementById('user-profile-modal');
+            const content = document.getElementById('user-profile-content');
+            
+            const userLeague = LEAGUES.slice().reverse().find(l => user.monthlyXP >= l.minXP) || LEAGUES[0];
+
+            content.innerHTML = `
+                <div class="flex items-center space-x-6">
+                    <img src="${user.profilePicUrl}" class="w-24 h-24 rounded-full border-4 border-cyan-400 object-cover">
+                    <div>
+                        <h3 class="text-3xl font-bold font-orbitron text-white">${user.displayName}</h3>
+                        <div class="flex items-center gap-4 mt-2">
+                           <span class="font-bold text-md font-orbitron bg-cyan-900/50 border-2 border-cyan-400/50 px-3 py-1 rounded-lg">LEVEL ${user.level}</span>
+                           <span class="flex items-center gap-2"><img src="${userLeague.iconUrl}" class="w-6 h-6 rounded-full">${userLeague.name}</span>
+                        </div>
+                    </div>
+                </div>
+                 <h4 class="text-2xl font-bold mt-6 mb-3 text-white font-orbitron">Achievements</h4>
+                <div id="modal-achievements-container" class="grid grid-cols-3 gap-3"></div>
+            `;
+            
+            const achievementsContainer = content.querySelector('#modal-achievements-container');
+            const userAchievements = user.achievements || [];
+             userAchievements.forEach(achievement => {
+                const achEl = document.createElement('div');
+                achEl.className = `cyber-card p-3 rounded-lg text-center ${!achievement.achieved ? 'opacity-40 grayscale' : ''}`;
+                achEl.innerHTML = `
+                    <i class="fas ${achievement.icon} text-3xl text-cyan-400 mb-1"></i>
+                    <h5 class="font-semibold text-sm text-white">${achievement.name}</h5>
+                    ${achievement.achieved ? '<span class="text-green-400 font-bold text-xs mt-1 block">Achieved</span>' : ''}
+                `;
+                achievementsContainer.appendChild(achEl);
+            });
+
+            modal.style.display = 'flex';
+        }
 
 
         // --- EVENT LISTENERS ---
@@ -1271,6 +1490,27 @@
                 document.getElementById('auth-submit-btn').textContent = isLoginMode ? 'Sign In' : 'Create Account';
                 document.getElementById('auth-toggle-text').textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Sign In";
             });
+
+            // Social Features
+            document.getElementById('user-search-input').addEventListener('keyup', handleUserSearch);
+            document.getElementById('social').addEventListener('click', (e) => {
+                if(e.target.closest('.add-friend-btn')) {
+                    sendFriendRequest(e.target.closest('.add-friend-btn').dataset.userId);
+                }
+                if(e.target.closest('.accept-friend-btn')) {
+                    acceptFriendRequest(e.target.closest('.accept-friend-btn').dataset.userId);
+                }
+                 if(e.target.closest('.decline-friend-btn')) {
+                    declineFriendRequest(e.target.closest('.decline-friend-btn').dataset.userId);
+                }
+                if(e.target.closest('.view-profile-btn')) {
+                    renderUserProfileModal(e.target.closest('.view-profile-btn').dataset.userId);
+                }
+            });
+            document.getElementById('close-user-profile-modal-btn').addEventListener('click', () => {
+                 document.getElementById('user-profile-modal').style.display = 'none';
+            });
+
 
             // Avatar Selection
             document.getElementById('profile-avatar-container').addEventListener('click', renderAvatarSelectionModal);
@@ -1303,6 +1543,7 @@
                     if (targetId === 'calendar') renderCalendar();
                     if (targetId === 'leagues') renderLeaguesPage();
                     if (targetId === 'leaderboard') renderLeaderboard();
+                    if (targetId === 'social') renderSocialPage();
                     if (targetId === 'profile') renderAchievements(); 
                     if (targetId === 'inventory') renderInventoryPage();
                     if (targetId === 'pass') renderStudyPass();
