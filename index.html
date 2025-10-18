@@ -64,7 +64,6 @@
         .main-content-area::-webkit-scrollbar { width: 8px; }
         .main-content-area::-webkit-scrollbar-track { background: transparent; }
         .main-content-area::-webkit-scrollbar-thumb { background-color: rgba(0, 255, 255, 0.3); border-radius: 4px; border: 1px solid rgba(0, 255, 255, 0.5); }
-        .profile-avatar-upload { cursor: pointer; }
     </style>
 </head>
 <body class="text-gray-200 antialiased">
@@ -167,12 +166,7 @@
                 <div id="profile" class="page hidden">
                      <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Operative Profile</h2>
                     <div class="cyber-card p-8 rounded-lg flex items-center space-x-8">
-                        <div class="relative group profile-avatar-upload">
-                            <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
-                            <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
-                                <i class="fas fa-camera text-3xl"></i>
-                            </div>
-                        </div>
+                        <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
                         <div>
                             <input id="profile-name-input" class="bg-gray-900/50 text-4xl font-bold text-white p-2 rounded-lg border border-cyan-300/30 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-orbitron" value="User">
                             <button id="update-profile-btn" class="cyber-button bg-green-500/20 border-green-400 text-green-300 font-bold py-2 px-4 rounded-lg ml-4">Save Changes</button>
@@ -204,9 +198,8 @@
     <div id="first-time-setup-modal" class="modal items-center justify-center">
         <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-md mx-auto modal-content">
             <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Welcome, Operative!</h2>
-            <p class="text-gray-400 mb-6">Let's set up your profile.</p>
+            <p class="text-gray-400 mb-6">Let's set up your display name.</p>
             <form id="first-time-setup-form" class="space-y-4">
-                 <img id="setup-avatar-preview" src="https://placehold.co/128x128/01040a/00ffff?text=?" class="w-32 h-32 rounded-full mx-auto border-4 border-cyan-400/50 mb-4 object-cover profile-avatar-upload">
                  <div>
                     <label for="setup-display-name" class="block text-sm font-medium text-cyan-300 mb-1">Choose your Display Name</label>
                     <input type="text" id="setup-display-name" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
@@ -252,16 +245,12 @@
             </form>
         </div>
     </div>
-    
-    <input type="file" id="avatar-upload-input" class="hidden" accept="image/*">
-
 
     <script type="module">
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
         
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -313,11 +302,10 @@
         ];
 
         // --- FIREBASE & STATE ---
-        let app, auth, db, storage;
+        let app, auth, db;
         let userData;
         let isLoginMode = true;
         let unsubscribeUser; 
-        let selectedAvatarFile = null;
 
         // --- INITIALIZATION ---
         window.onload = () => {
@@ -325,7 +313,6 @@
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
-                storage = getStorage(app);
                 setupAuthObserver();
             } else {
                 document.getElementById('login-view').innerHTML = '<p class="text-red-500 text-center">Firebase config is missing or invalid. Please check the script.</p>';
@@ -388,7 +375,6 @@
                         throw new Error("Username is already taken. Please choose another.");
                     }
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    // The onAuthStateChanged listener will now handle the next steps
                 }
             } catch (error) {
                 console.error("Auth error:", error);
@@ -405,25 +391,17 @@
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
                 if (!docSnap.exists()) {
-                    // This is a brand new user, regardless of sign-in method.
-                    // We need to create their initial document.
-                    // Note: We need the username from the form, which we don't have here.
-                    // So we create a placeholder document first. The setup modal will then update it.
-                    const username = user.email.split('@')[0]; // Best guess for a temporary username
+                    const username = user.email.split('@')[0];
                     await createInitialUserData(user, username);
-                    // The listener will fire again immediately after creation, entering the 'exists' block.
                     return; 
                 }
 
-                // Document exists, proceed.
                 userData = docSnap.data();
 
                 if (!userData.setupComplete) {
-                    // User exists but hasn't finished setup. Show the modal.
                     document.getElementById('setup-display-name').value = userData.displayName;
                     document.getElementById('first-time-setup-modal').style.display = 'flex';
                 } else {
-                    // User is fully set up. Show the app.
                     document.getElementById('login-view').classList.add('hidden');
                     document.getElementById('app-view').classList.remove('hidden');
                     document.getElementById('first-time-setup-modal').style.display = 'none';
@@ -439,18 +417,11 @@
                 alert("Please enter a display name.");
                 return;
             }
-            if (!selectedAvatarFile) {
-                alert("Please select a profile avatar.");
-                return;
-            }
             
             try {
-                const avatarUrl = await uploadAvatar(selectedAvatarFile);
-                
                 userData.displayName = displayName;
-                userData.profilePicUrl = avatarUrl;
+                userData.profilePicUrl = `https://placehold.co/128x128/01040a/00ffff?text=${displayName.charAt(0).toUpperCase()}`;
                 userData.setupComplete = true; 
-                
                 await saveUserData();
             } catch (error) {
                 alert(`Setup failed: ${error.message}`);
@@ -535,13 +506,6 @@
 
             saveUserData();
         }
-
-        async function uploadAvatar(file) {
-            if (!auth.currentUser || !file) throw new Error("No user or file to upload.");
-            const storageRef = ref(storage, `artifacts/${appId}/users/${auth.currentUser.uid}/profile.jpg`);
-            const snapshot = await uploadBytes(storageRef, file);
-            return await getDownloadURL(snapshot.ref);
-        }
         
         function checkAchievements(achievementId) {
             const achievement = userData.achievements.find(a => a.id === achievementId);
@@ -596,7 +560,7 @@
         function updateUI() {
             if (!userData) return;
             const currentLeague = LEAGUES.slice().reverse().find(l => userData.monthlyXP >= l.minXP) || LEAGUES[0];
-            const pfpUrl = userData.profilePicUrl || 'https://placehold.co/128x128/01040a/00ffff?text=?';
+            const pfpUrl = userData.profilePicUrl || `https://placehold.co/128x128/01040a/00ffff?text=${userData.displayName ? userData.displayName.charAt(0).toUpperCase() : '?'}`;
 
             document.getElementById('header-user-name').textContent = userData.displayName || 'Operative';
             document.getElementById('dashboard-profile-name').textContent = userData.displayName || 'Operative';
@@ -790,29 +754,6 @@
                 document.getElementById('auth-title').textContent = isLoginMode ? 'Login' : 'Create Account';
                 document.getElementById('auth-submit-btn').textContent = isLoginMode ? 'Sign In' : 'Create Account';
                 document.getElementById('auth-toggle-text').textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Sign In";
-            });
-
-            // Avatar Uploads
-            const avatarUploadInput = document.getElementById('avatar-upload-input');
-            document.querySelectorAll('.profile-avatar-upload').forEach(el => el.addEventListener('click', () => avatarUploadInput.click()));
-            
-            avatarUploadInput.addEventListener('change', async (event) => {
-                const file = event.target.files[0];
-                if (!file) return;
-
-                if (document.getElementById('first-time-setup-modal').style.display === 'flex') {
-                    selectedAvatarFile = file;
-                    document.getElementById('setup-avatar-preview').src = URL.createObjectURL(file);
-                } else if (userData) {
-                    try {
-                        const newAvatarUrl = await uploadAvatar(file);
-                        userData.profilePicUrl = newAvatarUrl;
-                        await saveUserData();
-                        alert("Avatar updated successfully!");
-                    } catch (error) {
-                        alert(`Avatar update failed: ${error.message}`);
-                    }
-                }
             });
 
             // Navigation
