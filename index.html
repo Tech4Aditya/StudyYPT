@@ -48,9 +48,13 @@
             box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
             transition: all 0.2s ease-in-out;
         }
-        .cyber-button:hover {
+        .cyber-button:hover:not(:disabled) {
             box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
             background: rgba(0, 255, 255, 0.1);
+        }
+        .cyber-button:disabled {
+            cursor: not-allowed;
+            filter: grayscale(0.8);
         }
         .main-content-area {
              overflow-y: auto;
@@ -107,6 +111,7 @@
                 <ul class="space-y-2 px-4">
                     <li><a href="#home" class="nav-link flex items-center p-3 rounded-lg text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/20 bg-cyan-500/20"><i class="fas fa-compass w-6 text-2xl text-center"></i><span class="nav-text ml-4 font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Dashboard</span></a></li>
                     <li><a href="#calendar" class="nav-link flex items-center p-3 rounded-lg text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/20"><i class="fas fa-calendar-alt w-6 text-2xl text-center"></i><span class="nav-text ml-4 font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Calendar</span></a></li>
+                    <li><a href="#social" class="nav-link flex items-center p-3 rounded-lg text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/20"><i class="fas fa-users w-6 text-2xl text-center"></i><span class="nav-text ml-4 font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Social</span></a></li>
                     <li><a href="#leagues" class="nav-link flex items-center p-3 rounded-lg text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/20"><i class="fas fa-shield-halved w-6 text-2xl text-center"></i><span class="nav-text ml-4 font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Leagues</span></a></li>
                     <li><a href="#leaderboard" class="nav-link flex items-center p-3 rounded-lg text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/20"><i class="fas fa-trophy w-6 text-2xl text-center"></i><span class="nav-text ml-4 font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Leaderboard</span></a></li>
                     <li><a href="#profile" class="nav-link flex items-center p-3 rounded-lg text-gray-400 hover:text-cyan-300 hover:bg-cyan-500/20"><i class="fas fa-user-astronaut w-6 text-2xl text-center"></i><span class="nav-text ml-4 font-semibold whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity">Profile</span></a></li>
@@ -185,6 +190,25 @@
                     </div>
                     <h3 id="calendar-tasks-header" class="text-2xl font-bold text-white font-orbitron mb-4 hidden">Missions for <span id="selected-date-span"></span></h3>
                     <div id="calendar-tasks-container" class="space-y-4"></div>
+                </div>
+
+                <div id="social" class="page hidden">
+                    <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Social Hub</h2>
+                    <div class="mb-8">
+                        <h3 class="text-2xl font-bold text-cyan-300 mb-4">Find Operatives</h3>
+                        <input type="text" id="user-search-input" placeholder="Search by username..." class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                        <div id="user-search-results" class="mt-4 space-y-2"></div>
+                    </div>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                        <div>
+                            <h3 class="text-2xl font-bold text-cyan-300 mb-4">Friend Requests</h3>
+                            <div id="friend-requests-container" class="space-y-3"></div>
+                        </div>
+                        <div>
+                            <h3 class="text-2xl font-bold text-cyan-300 mb-4">Friends</h3>
+                            <div id="friends-list-container" class="space-y-3"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="leagues" class="page hidden">
@@ -282,6 +306,28 @@
         </div>
     </div>
 
+    <div id="user-profile-modal" class="modal items-center justify-center">
+        <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-xl mx-auto modal-content">
+            <div id="user-profile-content"></div>
+            <div class="flex justify-end pt-6">
+                <button id="close-user-profile-modal-btn" class="bg-gray-600/50 hover:bg-gray-500/50 text-white font-bold py-2 px-6 rounded-lg">Close</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="chat-modal" class="modal items-end justify-end p-4">
+        <div class="cyber-card rounded-lg shadow-xl w-full max-w-md h-2/3 flex flex-col modal-content">
+            <div id="chat-header" class="p-4 border-b border-cyan-300/20 flex justify-between items-center">
+                <h3 class="text-xl font-bold text-white">Chat</h3>
+                <button id="close-chat-modal-btn" class="text-gray-400 hover:text-white">&times;</button>
+            </div>
+            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto"></div>
+            <div id="chat-input-container" class="p-4 border-t border-cyan-300/20">
+                <input type="text" class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white" placeholder="Type a message...">
+            </div>
+        </div>
+    </div>
+
     <div id="first-time-setup-modal" class="modal items-center justify-center">
         <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-md mx-auto modal-content">
             <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Welcome, Operative!</h2>
@@ -337,7 +383,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -420,6 +466,7 @@
         let isLoginMode = true;
         let unsubscribeUser; 
         let currentCalendarDate = new Date();
+        let allUsersCache = [];
 
         // --- INITIALIZATION ---
         window.onload = () => {
@@ -428,11 +475,27 @@
                 auth = getAuth(app);
                 db = getFirestore(app);
                 setupAuthObserver();
+                fetchAllUsers();
             } else {
                 document.getElementById('login-view').innerHTML = '<p class="text-red-500 text-center">Firebase config is missing or invalid. Please check the script.</p>';
             }
             setupEventListeners();
         };
+
+        async function fetchAllUsers() {
+            const usersRef = collection(db, `artifacts/${appId}/public/data/profiles`);
+            onSnapshot(usersRef, 
+                (snapshot) => {
+                    allUsersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                },
+                (error) => {
+                    console.error("Error fetching all users:", error);
+                    if (error.code === 'permission-denied') {
+                        alert("Firestore Permission Error: Could not load user profiles.\n\nPlease update your Firestore Security Rules in the Firebase Console with the following to allow users to see each other:\n\nmatch /artifacts/{appId}/public/data/profiles/{userId} {\n  allow read: if request.auth != null;\n  allow write: if request.auth != null && request.auth.uid == userId;\n}");
+                    }
+                }
+            );
+        }
 
         function setupAuthObserver() {
             onAuthStateChanged(auth, user => {
@@ -510,8 +573,10 @@
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
                 if (!docSnap.exists()) {
+                    // This is now a fallback/safety net. If a user exists in Auth but not Firestore, this will fix it.
                     const username = user.email ? user.email.split('@')[0] : `operative${Date.now()}`;
                     await createInitialUserData(user, username);
+                    // The listener will automatically re-run after the document is created.
                     return; 
                 }
 
@@ -547,6 +612,11 @@
                     document.getElementById('app-view').classList.remove('hidden');
                     document.getElementById('first-time-setup-modal').style.display = 'none';
                     updateUI();
+                }
+            }, (error) => {
+                console.error("Snapshot error:", error);
+                if(error.code === 'permission-denied') {
+                    alert("Firestore Permission Error: Could not load your profile.\n\nPlease check your Firestore Security Rules in the Firebase Console. Make sure you have a rule that allows users to read and write their own data, like this:\n\nmatch /artifacts/{appId}/users/{userId}/profile/data {\n  allow read, write: if request.auth != null && request.auth.uid == userId;\n}");
                 }
             });
         }
@@ -586,6 +656,8 @@
                 level: 1, xp: 0, coins: 50, sp: 5, monthlyXP: 0,
                 tasks: {}, purchasedItems: [], todayXP: 0, tasksCompletedToday: 0, achievements: MOCK_ACHIEVEMENTS,
                 studyPassProgress: { claimedTiers: [] },
+                friends: [],
+                friendRequests: { sent: [], received: [] },
                 lastLoginDate: today,
                 lastQuoteDate: today,
                 lastSeasonId: seasonInfo.id
@@ -606,13 +678,15 @@
         
         async function updatePublicProfile(data) {
              if (!data.uid) return;
-             const publicRef = doc(db, `artifacts/${appId}/public/data/leaderboard/${data.uid}`);
+             const publicRef = doc(db, `artifacts/${appId}/public/data/profiles/${data.uid}`);
              const publicData = {
                 displayName: data.displayName,
                 profilePicUrl: data.profilePicUrl,
                 monthlyXP: data.monthlyXP,
                 level: data.level,
                 uid: data.uid,
+                achievements: data.achievements,
+                equippedTitle: data.equippedTitle
              };
              await setDoc(publicRef, publicData, { merge: true });
         }
