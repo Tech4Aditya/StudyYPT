@@ -315,19 +315,6 @@
         </div>
     </div>
 
-    <div id="chat-modal" class="modal items-end justify-end p-4">
-        <div class="cyber-card rounded-lg shadow-xl w-full max-w-md h-2/3 flex flex-col modal-content">
-            <div id="chat-header" class="p-4 border-b border-cyan-300/20 flex justify-between items-center">
-                <h3 class="text-xl font-bold text-white">Chat</h3>
-                <button id="close-chat-modal-btn" class="text-gray-400 hover:text-white">&times;</button>
-            </div>
-            <div id="chat-messages" class="flex-1 p-4 overflow-y-auto"></div>
-            <div id="chat-input-container" class="p-4 border-t border-cyan-300/20">
-                <input type="text" id="chat-message-input" class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white" placeholder="Type a message...">
-            </div>
-        </div>
-    </div>
-
     <div id="first-time-setup-modal" class="modal items-center justify-center">
         <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-md mx-auto modal-content">
             <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Welcome, Operative!</h2>
@@ -383,7 +370,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -468,8 +455,6 @@
         let currentCalendarDate = new Date();
         let allUsersCache = [];
         let allUsersListenerAttached = false;
-        let currentChatListenerUnsubscribe = null;
-        let currentChatId = null;
 
         // --- INITIALIZATION ---
         window.onload = () => {
@@ -489,7 +474,7 @@
             onSnapshot(usersRef, 
                 (snapshot) => {
                     allUsersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    // If the user is currently on the leaderboard or leagues page, re-render it with the new data
+                    // If the user is currently on a page that needs all user data, re-render it
                     if (!document.getElementById('leaderboard').classList.contains('hidden')) {
                         renderLeaderboard();
                     }
@@ -513,8 +498,6 @@
             onAuthStateChanged(auth, user => {
                 if (unsubscribeUser) unsubscribeUser(); 
                 if (user) {
-                    // User is authenticated, it's safe to fetch public profiles now.
-                    // Only attach the listener once per session.
                     if (!allUsersListenerAttached) {
                         fetchAllUsers();
                         allUsersListenerAttached = true;
@@ -525,8 +508,6 @@
                     document.getElementById('app-view').classList.add('hidden');
                     document.getElementById('first-time-setup-modal').style.display = 'none';
                     userData = null;
-                    // When the user signs out, reset this flag so the listener
-                    // is re-attached if a new user signs in.
                     allUsersListenerAttached = false;
                 }
             });
@@ -594,10 +575,8 @@
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
                 if (!docSnap.exists()) {
-                    // This is now a fallback/safety net. If a user exists in Auth but not Firestore, this will fix it.
                     const username = user.email ? user.email.split('@')[0] : `operative${Date.now()}`;
                     await createInitialUserData(user, username);
-                    // The listener will automatically re-run after the document is created.
                     return; 
                 }
 
@@ -957,10 +936,8 @@
             const container = document.getElementById('leaderboard-body');
             if (!container) return;
 
-            // FIX: Use the 'allUsersCache' which is updated by the real-time listener
             const usersFromDB = [...allUsersCache];
 
-            // Add bots to the list and update their XP
             botsData.forEach(bot => {
                 const lastUpdate = localStorage.getItem(`bot_update_${bot.name}`);
                 const today = new Date().toDateString();
@@ -998,7 +975,6 @@
             const container = document.getElementById('leagues-container');
             if (!container || !userData) return;
 
-            // FIX: Use the 'allUsersCache' which is updated by the real-time listener
             const allPlayers = allUsersCache;
             
             container.innerHTML = '';
@@ -1315,7 +1291,6 @@
                                 <span class="font-semibold">${user.displayName}</span>
                             </div>
                              <div>
-                                <button class="start-chat-btn cyber-button text-sm bg-purple-500/20 text-purple-300 py-1 px-3 rounded-md mr-2" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="fas fa-comments"></i></button>
                                 <button class="view-profile-btn cyber-button text-sm bg-cyan-500/20 text-cyan-300 py-1 px-3 rounded-md" data-user-id="${user.id}">View Profile</button>
                              </div>
                         `;
@@ -1444,19 +1419,43 @@
             
             const userLeague = LEAGUES.slice().reverse().find(l => user.monthlyXP >= l.minXP) || LEAGUES[0];
 
+            const currentTierIndex = STUDY_PASS_REWARDS.slice().reverse().findIndex(tier => user.monthlyXP >= tier.xp);
+            const totalTiers = STUDY_PASS_REWARDS.length;
+            const displayTier = currentTierIndex === -1 ? totalTiers : currentTierIndex + 1;
+
+            const equippedTitle = SHOP_ITEMS.find(item => item.id === user.equippedTitle && item.type === 'title');
+            const titleHTML = equippedTitle ? `<span class="ml-4 text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1 rounded-full">${equippedTitle.name.replace('Title: ', '')}</span>` : '';
+
             content.innerHTML = `
-                <div class="flex items-center space-x-6">
+                <div class="flex items-start space-x-6">
                     <img src="${user.profilePicUrl}" class="w-24 h-24 rounded-full border-4 border-cyan-400 object-cover">
-                    <div>
-                        <h3 class="text-3xl font-bold font-orbitron text-white">${user.displayName}</h3>
-                        <div class="flex items-center gap-4 mt-2">
+                    <div class="flex-1">
+                        <div class="flex items-center">
+                            <h3 class="text-3xl font-bold font-orbitron text-white">${user.displayName}</h3>
+                            ${titleHTML}
+                        </div>
+                        <div class="flex items-center gap-4 mt-2 text-gray-300">
                            <span class="font-bold text-md font-orbitron bg-cyan-900/50 border-2 border-cyan-400/50 px-3 py-1 rounded-lg">LEVEL ${user.level}</span>
                            <span class="flex items-center gap-2"><img src="${userLeague.iconUrl}" class="w-6 h-6 rounded-full">${userLeague.name}</span>
                         </div>
                     </div>
                 </div>
+
+                <div class="grid grid-cols-2 gap-4 mt-6">
+                    <div class="cyber-card p-3 rounded-lg">
+                        <p class="text-sm text-cyan-300">Monthly XP</p>
+                        <p class="text-xl font-bold font-orbitron text-white">${user.monthlyXP}</p>
+                    </div>
+                     <div class="cyber-card p-3 rounded-lg">
+                        <p class="text-sm text-cyan-300">Study Pass Tier</p>
+                        <p class="text-xl font-bold font-orbitron text-white">${displayTier}</p>
+                    </div>
+                </div>
+
                  <h4 class="text-2xl font-bold mt-6 mb-3 text-white font-orbitron">Achievements</h4>
                 <div id="modal-achievements-container" class="grid grid-cols-3 gap-3"></div>
+                
+                <p class="text-xs text-gray-500 mt-6 text-center">Note: Mission history is private and not visible to other operatives.</p>
             `;
             
             const achievementsContainer = content.querySelector('#modal-achievements-container');
@@ -1474,80 +1473,6 @@
 
             modal.style.display = 'flex';
         }
-
-        async function startChat(friendId, friendName) {
-            if (currentChatListenerUnsubscribe) {
-                currentChatListenerUnsubscribe();
-            }
-
-            currentChatId = [auth.currentUser.uid, friendId].sort().join('_');
-            
-            const chatDocRef = doc(db, `artifacts/${appId}/public/data/chats/${currentChatId}`);
-            try {
-                await setDoc(chatDocRef, { participants: [auth.currentUser.uid, friendId] }, { merge: true });
-            } catch(e) {
-                console.error("Error creating chat document:", e);
-                alert("Could not start chat. Please check your Firestore security rules for the 'chats' collection.");
-                return;
-            }
-
-            document.querySelector('#chat-header h3').textContent = `Chat with ${friendName}`;
-            const chatMessages = document.getElementById('chat-messages');
-            chatMessages.innerHTML = '';
-            document.getElementById('chat-modal').style.display = 'flex';
-
-            const messagesRef = collection(db, `artifacts/${appId}/public/data/chats/${currentChatId}/messages`);
-            const q = query(messagesRef);
-
-            currentChatListenerUnsubscribe = onSnapshot(q, (snapshot) => {
-                const messages = snapshot.docs.map(doc => doc.data());
-                messages.sort((a, b) => a.timestamp?.seconds - b.timestamp?.seconds);
-                chatMessages.innerHTML = '';
-                messages.forEach(msg => {
-                    const msgEl = document.createElement('div');
-                    const isSender = msg.senderId === auth.currentUser.uid;
-                    msgEl.className = `p-2 rounded-lg mb-2 max-w-xs ${isSender ? 'bg-cyan-700/50 ml-auto' : 'bg-gray-700/50 mr-auto'}`;
-                    msgEl.textContent = msg.text;
-                    chatMessages.appendChild(msgEl);
-                });
-                chatMessages.scrollTop = chatMessages.scrollHeight;
-            }, (error) => {
-                 console.error("Chat listener error:", error);
-                if (error.code === 'permission-denied') {
-                    alert("Could not load chat. Please ensure your Firestore security rules are set up correctly for reading messages.");
-                }
-            });
-        }
-
-        async function sendMessage() {
-            const input = document.getElementById('chat-message-input');
-            const text = input.value.trim();
-
-            if (text && currentChatId) {
-                const messagesRef = collection(db, `artifacts/${appId}/public/data/chats/${currentChatId}/messages`);
-                try {
-                    await addDoc(messagesRef, {
-                        text: text,
-                        senderId: auth.currentUser.uid,
-                        timestamp: serverTimestamp()
-                    });
-                    input.value = '';
-                } catch (e) {
-                     console.error("Error sending message:", e);
-                     alert("Could not send message.");
-                }
-            }
-        }
-        
-        function closeChat() {
-            if (currentChatListenerUnsubscribe) {
-                currentChatListenerUnsubscribe();
-            }
-            currentChatListenerUnsubscribe = null;
-            currentChatId = null;
-            document.getElementById('chat-modal').style.display = 'none';
-        }
-
 
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
@@ -1569,7 +1494,7 @@
                 document.getElementById('auth-toggle-text').textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Sign In";
             });
 
-            // Social & Chat Features
+            // Social Features
             document.getElementById('user-search-input').addEventListener('keyup', handleUserSearch);
             document.getElementById('social').addEventListener('click', (e) => {
                 const target = e.target.closest('button');
@@ -1587,18 +1512,9 @@
                 if(target.classList.contains('view-profile-btn')) {
                     renderUserProfileModal(target.dataset.userId);
                 }
-                 if(target.classList.contains('start-chat-btn')) {
-                    startChat(target.dataset.userId, target.dataset.userName);
-                }
             });
             document.getElementById('close-user-profile-modal-btn').addEventListener('click', () => {
                  document.getElementById('user-profile-modal').style.display = 'none';
-            });
-            document.getElementById('close-chat-modal-btn').addEventListener('click', closeChat);
-            document.getElementById('chat-message-input').addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    sendMessage();
-                }
             });
 
 
