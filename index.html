@@ -451,6 +451,7 @@
             
             try {
                 userData.displayName = displayName;
+                userData.profilePicUrl = `https://placehold.co/128x128/01040a/00ffff?text=${displayName.charAt(0).toUpperCase()}`;
                 userData.setupComplete = true; 
                 await saveUserData();
             } catch (error) {
@@ -716,7 +717,7 @@
             const totalXPNeeded = STUDY_PASS_REWARDS[STUDY_PASS_REWARDS.length - 1].xp;
             const currentPassXP = userData.monthlyXP;
             const passPercentage = totalXPNeeded > 0 ? (currentPassXP / totalXPNeeded) * 100 : 0;
-            document.getElementById('pass-progress-bar').style.width = `${Math.min(100, passPercentage)}%`;
+            document.getElementById('pass-progress-bar').style.width = `${Math.min(100, percentage)}%`;
             document.getElementById('pass-progress-bar').textContent = `${Math.min(totalXPNeeded, currentPassXP)} / ${totalXPNeeded} XP`;
 
 
