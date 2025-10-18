@@ -323,7 +323,7 @@
             </div>
             <div id="chat-messages" class="flex-1 p-4 overflow-y-auto"></div>
             <div id="chat-input-container" class="p-4 border-t border-cyan-300/20">
-                <input type="text" class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white" placeholder="Type a message...">
+                <input type="text" id="chat-message-input" class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white" placeholder="Type a message...">
             </div>
         </div>
     </div>
@@ -383,7 +383,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -468,6 +468,8 @@
         let currentCalendarDate = new Date();
         let allUsersCache = [];
         let allUsersListenerAttached = false;
+        let currentChatListenerUnsubscribe = null;
+        let currentChatId = null;
 
         // --- INITIALIZATION ---
         window.onload = () => {
@@ -1312,7 +1314,10 @@
                                 <img src="${user.profilePicUrl}" class="w-10 h-10 rounded-full object-cover">
                                 <span class="font-semibold">${user.displayName}</span>
                             </div>
-                             <button class="view-profile-btn cyber-button text-sm bg-cyan-500/20 text-cyan-300 py-1 px-3 rounded-md" data-user-id="${user.id}">View Profile</button>
+                             <div>
+                                <button class="start-chat-btn cyber-button text-sm bg-purple-500/20 text-purple-300 py-1 px-3 rounded-md mr-2" data-user-id="${user.id}" data-user-name="${user.displayName}"><i class="fas fa-comments"></i></button>
+                                <button class="view-profile-btn cyber-button text-sm bg-cyan-500/20 text-cyan-300 py-1 px-3 rounded-md" data-user-id="${user.id}">View Profile</button>
+                             </div>
                         `;
                         friendsContainer.appendChild(friendEl);
                     }
@@ -1470,6 +1475,79 @@
             modal.style.display = 'flex';
         }
 
+        async function startChat(friendId, friendName) {
+            if (currentChatListenerUnsubscribe) {
+                currentChatListenerUnsubscribe();
+            }
+
+            currentChatId = [auth.currentUser.uid, friendId].sort().join('_');
+            
+            const chatDocRef = doc(db, `artifacts/${appId}/public/data/chats/${currentChatId}`);
+            try {
+                await setDoc(chatDocRef, { participants: [auth.currentUser.uid, friendId] }, { merge: true });
+            } catch(e) {
+                console.error("Error creating chat document:", e);
+                alert("Could not start chat. Please check your Firestore security rules for the 'chats' collection.");
+                return;
+            }
+
+            document.querySelector('#chat-header h3').textContent = `Chat with ${friendName}`;
+            const chatMessages = document.getElementById('chat-messages');
+            chatMessages.innerHTML = '';
+            document.getElementById('chat-modal').style.display = 'flex';
+
+            const messagesRef = collection(db, `artifacts/${appId}/public/data/chats/${currentChatId}/messages`);
+            const q = query(messagesRef);
+
+            currentChatListenerUnsubscribe = onSnapshot(q, (snapshot) => {
+                const messages = snapshot.docs.map(doc => doc.data());
+                messages.sort((a, b) => a.timestamp?.seconds - b.timestamp?.seconds);
+                chatMessages.innerHTML = '';
+                messages.forEach(msg => {
+                    const msgEl = document.createElement('div');
+                    const isSender = msg.senderId === auth.currentUser.uid;
+                    msgEl.className = `p-2 rounded-lg mb-2 max-w-xs ${isSender ? 'bg-cyan-700/50 ml-auto' : 'bg-gray-700/50 mr-auto'}`;
+                    msgEl.textContent = msg.text;
+                    chatMessages.appendChild(msgEl);
+                });
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+            }, (error) => {
+                 console.error("Chat listener error:", error);
+                if (error.code === 'permission-denied') {
+                    alert("Could not load chat. Please ensure your Firestore security rules are set up correctly for reading messages.");
+                }
+            });
+        }
+
+        async function sendMessage() {
+            const input = document.getElementById('chat-message-input');
+            const text = input.value.trim();
+
+            if (text && currentChatId) {
+                const messagesRef = collection(db, `artifacts/${appId}/public/data/chats/${currentChatId}/messages`);
+                try {
+                    await addDoc(messagesRef, {
+                        text: text,
+                        senderId: auth.currentUser.uid,
+                        timestamp: serverTimestamp()
+                    });
+                    input.value = '';
+                } catch (e) {
+                     console.error("Error sending message:", e);
+                     alert("Could not send message.");
+                }
+            }
+        }
+        
+        function closeChat() {
+            if (currentChatListenerUnsubscribe) {
+                currentChatListenerUnsubscribe();
+            }
+            currentChatListenerUnsubscribe = null;
+            currentChatId = null;
+            document.getElementById('chat-modal').style.display = 'none';
+        }
+
 
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
@@ -1491,24 +1569,36 @@
                 document.getElementById('auth-toggle-text').textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Sign In";
             });
 
-            // Social Features
+            // Social & Chat Features
             document.getElementById('user-search-input').addEventListener('keyup', handleUserSearch);
             document.getElementById('social').addEventListener('click', (e) => {
-                if(e.target.closest('.add-friend-btn')) {
-                    sendFriendRequest(e.target.closest('.add-friend-btn').dataset.userId);
+                const target = e.target.closest('button');
+                if (!target) return;
+
+                if(target.classList.contains('add-friend-btn')) {
+                    sendFriendRequest(target.dataset.userId);
                 }
-                if(e.target.closest('.accept-friend-btn')) {
-                    acceptFriendRequest(e.target.closest('.accept-friend-btn').dataset.userId);
+                if(target.classList.contains('accept-friend-btn')) {
+                    acceptFriendRequest(target.dataset.userId);
                 }
-                 if(e.target.closest('.decline-friend-btn')) {
-                    declineFriendRequest(e.target.closest('.decline-friend-btn').dataset.userId);
+                 if(target.classList.contains('decline-friend-btn')) {
+                    declineFriendRequest(target.dataset.userId);
                 }
-                if(e.target.closest('.view-profile-btn')) {
-                    renderUserProfileModal(e.target.closest('.view-profile-btn').dataset.userId);
+                if(target.classList.contains('view-profile-btn')) {
+                    renderUserProfileModal(target.dataset.userId);
+                }
+                 if(target.classList.contains('start-chat-btn')) {
+                    startChat(target.dataset.userId, target.dataset.userName);
                 }
             });
             document.getElementById('close-user-profile-modal-btn').addEventListener('click', () => {
                  document.getElementById('user-profile-modal').style.display = 'none';
+            });
+            document.getElementById('close-chat-modal-btn').addEventListener('click', closeChat);
+            document.getElementById('chat-message-input').addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    sendMessage();
+                }
             });
 
 
