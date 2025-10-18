@@ -57,8 +57,8 @@
             filter: grayscale(0.8);
         }
         .main-content-area {
-             overflow-y: auto;
-             height: calc(100vh - 73px);
+            overflow-y: auto;
+            height: calc(100vh - 73px);
         }
         .main-content-area::-webkit-scrollbar { width: 8px; }
         .main-content-area::-webkit-scrollbar-track { background: transparent; }
@@ -105,7 +105,7 @@
     <!-- Main App View --><div id="app-view" class="h-screen w-full flex bg-black/10 hidden">
         <!-- Icon Sidebar --><nav id="sidebar" class="group w-20 hover:w-56 transition-all duration-300 bg-black/30 backdrop-blur-lg border-r border-cyan-300/20 flex flex-col">
             <div class="p-4 flex items-center justify-center">
-                 <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-12 h-12 rounded-full object-cover">
+                <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-12 h-12 rounded-full object-cover">
             </div>
             <div class="flex-1 overflow-y-auto sidebar-scroll-area py-4">
                 <ul class="space-y-2 px-4">
@@ -381,9 +381,9 @@
 
     <script type="module">
         // Firebase Imports
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -487,6 +487,13 @@
             onSnapshot(usersRef, 
                 (snapshot) => {
                     allUsersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    // If the user is currently on the leaderboard or leagues page, re-render it with the new data
+                    if (!document.getElementById('leaderboard').classList.contains('hidden')) {
+                        renderLeaderboard();
+                    }
+                    if (!document.getElementById('leagues').classList.contains('hidden')) {
+                        renderLeaguesPage();
+                    }
                 },
                 (error) => {
                     console.error("Error fetching all users:", error);
@@ -554,7 +561,7 @@
                 } else if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
                     alert("Authentication failed: Permission Denied.\n\nThis is a Firebase Security Rule issue.\n\nPlease go to your Firebase Console -> Firestore Database -> Rules and add the following rule inside the `match /databases/{database}/documents { ... }` block:\n\nmatch /usernames/{username} {\n  allow read, create: if true;\n}\n\nThis allows the app to check if a username is available before creating an account.");
                 } else {
-                     alert(`Authentication failed: ${error.message}`);
+                    alert(`Authentication failed: ${error.message}`);
                 }
             }
         }
@@ -894,7 +901,6 @@
 
 
             renderTasks();
-            renderLeaderboard();
             renderShop();
             renderStudyPass();
             renderAchievements();
@@ -933,17 +939,15 @@
              document.querySelectorAll('.task-complete-btn').forEach(btn => btn.addEventListener('click', (e) => completeTask(e.currentTarget.dataset.taskId, e.currentTarget.dataset.taskDate)));
         }
 
-        async function renderLeaderboard() {
+        function renderLeaderboard() {
             const container = document.getElementById('leaderboard-body');
-            if(!container) return;
-            
-            const leaderboardCol = collection(db, `artifacts/${appId}/public/data/leaderboard`);
-            const snapshot = await getDocs(leaderboardCol);
-            let usersFromDB = snapshot.docs.map(doc => doc.data());
+            if (!container) return;
 
-            // Add bots to the list
+            // FIX: Use the 'allUsersCache' which is updated by the real-time listener
+            const usersFromDB = [...allUsersCache];
+
+            // Add bots to the list and update their XP
             botsData.forEach(bot => {
-                 // Update bot XP daily
                 const lastUpdate = localStorage.getItem(`bot_update_${bot.name}`);
                 const today = new Date().toDateString();
                 if (lastUpdate !== today) {
@@ -962,7 +966,6 @@
                 const totalTiers = STUDY_PASS_REWARDS.length;
                 const displayTier = currentTierIndex === -1 ? totalTiers : currentTierIndex + 1;
 
-
                 const row = document.createElement('tr');
                 row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20 text-white' : ''}`;
                 row.innerHTML = `
@@ -977,13 +980,12 @@
             });
         }
         
-        async function renderLeaguesPage() {
+        function renderLeaguesPage() {
             const container = document.getElementById('leagues-container');
-            if(!container || !userData) return;
+            if (!container || !userData) return;
 
-            const publicProfilesQuery = query(collection(db, `artifacts/${appId}/public/data/leaderboard`));
-            const querySnapshot = await getDocs(publicProfilesQuery);
-            const allPlayers = querySnapshot.docs.map(doc => doc.data());
+            // FIX: Use the 'allUsersCache' which is updated by the real-time listener
+            const allPlayers = allUsersCache;
             
             container.innerHTML = '';
             LEAGUES.forEach((league, index) => {
@@ -1343,4 +1345,3 @@
     </script>
 </body>
 </html>
-
