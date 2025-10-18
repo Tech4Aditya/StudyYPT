@@ -64,6 +64,7 @@
         .main-content-area::-webkit-scrollbar { width: 8px; }
         .main-content-area::-webkit-scrollbar-track { background: transparent; }
         .main-content-area::-webkit-scrollbar-thumb { background-color: rgba(0, 255, 255, 0.3); border-radius: 4px; border: 1px solid rgba(0, 255, 255, 0.5); }
+        .profile-avatar-upload { cursor: pointer; }
     </style>
 </head>
 <body class="text-gray-200 antialiased">
@@ -166,7 +167,12 @@
                 <div id="profile" class="page hidden">
                      <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Operative Profile</h2>
                     <div class="cyber-card p-8 rounded-lg flex items-center space-x-8">
-                        <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
+                        <div id="profile-avatar-container" class="relative group profile-avatar-upload">
+                             <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
+                             <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                                <i class="fas fa-camera text-3xl"></i>
+                            </div>
+                        </div>
                         <div>
                             <input id="profile-name-input" class="bg-gray-900/50 text-4xl font-bold text-white p-2 rounded-lg border border-cyan-300/30 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-orbitron" value="User">
                             <button id="update-profile-btn" class="cyber-button bg-green-500/20 border-green-400 text-green-300 font-bold py-2 px-4 rounded-lg ml-4">Save Changes</button>
@@ -195,6 +201,18 @@
     </div>
 
     <!-- Modals -->
+    <div id="avatar-selection-modal" class="modal items-center justify-center">
+        <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-2xl mx-auto modal-content">
+            <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Select Avatar</h2>
+            <div id="avatar-grid" class="grid grid-cols-4 md:grid-cols-6 gap-4">
+                <!-- Avatars will be rendered here -->
+            </div>
+             <div class="flex justify-end pt-6">
+                <button id="close-avatar-modal-btn" class="bg-gray-600/50 hover:bg-gray-500/50 text-white font-bold py-2 px-6 rounded-lg">Close</button>
+            </div>
+        </div>
+    </div>
+
     <div id="first-time-setup-modal" class="modal items-center justify-center">
         <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-md mx-auto modal-content">
             <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Welcome, Operative!</h2>
@@ -266,6 +284,14 @@
         const appId = "studyypt-1fa01";
 
         // --- CONSTANTS ---
+        const AVATAR_OPTIONS = [
+            { id: 'default', url: 'https://placehold.co/128x128/01040a/00ffff?text=S' },
+            { id: 'avatar_rocket', url: 'https://placehold.co/128x128/9333ea/ffffff?text=🚀' },
+            { id: 'avatar_brain', url: 'https://placehold.co/128x128/be123c/ffffff?text=🧠' },
+            { id: 'avatar_atom', url: 'https://placehold.co/128x128/16a34a/ffffff?text=⚛️' },
+            { id: 'avatar_book', url: 'https://placehold.co/128x128/ca8a04/ffffff?text=📚' },
+            { id: 'avatar_globe', url: 'https://placehold.co/128x128/0284c7/ffffff?text=🌍' },
+        ];
         const QUOTES = [ { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" }, { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" }, { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill"} ];
         const LEAGUES = [
             { name: "Bronze", minXP: 0, icon: "fa-solid fa-medal", color: "text-orange-400" }, 
@@ -285,14 +311,14 @@
             { id: 'level_5', name: 'Ascendant', description: 'Reach Level 5', icon: 'fa-arrow-up', achieved: false }
         ];
         const STUDY_PASS_REWARDS = [ 
-            { xp: 0, coins: 50, sp: 20, title: "Rookie" },
-            { xp: 1000, coins: 100, sp: 30, title: "Apprentice" },
-            { xp: 2500, coins: 150, sp: 40, title: "Journeyman" },
-            { xp: 5000, coins: 200, sp: 50, title: "Scholar" },
-            { xp: 7500, coins: 250, sp: 60, title: "Adept" },
-            { xp: 10000, coins: 300, sp: 70, title: "Mastermind" },
-            { xp: 15000, coins: 400, sp: 80, title: "Grandmaster" },
-            { xp: 20000, coins: 500, sp: 100, title: "Legendary" }
+            { xp: 0, type: 'coins', value: 50 },
+            { xp: 1000, type: 'sp', value: 30 },
+            { xp: 2500, type: 'avatar', value: 'avatar_rocket' },
+            { xp: 5000, type: 'coins', value: 200 },
+            { xp: 7500, type: 'sp', value: 60 },
+            { xp: 10000, type: 'avatar', value: 'avatar_brain' },
+            { xp: 15000, type: 'coins', value: 400 },
+            { xp: 20000, type: 'avatar', value: 'avatar_atom' }
         ];
         let botsData = [
             { name: 'Cipher', level: 15, monthlyXP: 12540, profilePicUrl: 'https://placehold.co/40x40/9333ea/ffffff?text=C' }, 
@@ -374,7 +400,7 @@
                     if (usernameSnap.exists()) {
                         throw new Error("Username is already taken. Please choose another.");
                     }
-                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await createUserWithEmailAndPassword(auth, email, password);
                 }
             } catch (error) {
                 console.error("Auth error:", error);
@@ -420,7 +446,6 @@
             
             try {
                 userData.displayName = displayName;
-                userData.profilePicUrl = `https://placehold.co/128x128/01040a/00ffff?text=${displayName.charAt(0).toUpperCase()}`;
                 userData.setupComplete = true; 
                 await saveUserData();
             } catch (error) {
@@ -435,7 +460,8 @@
                 displayName: username,
                 username: username,
                 email: user.email,
-                profilePicUrl: "",
+                profilePicUrl: AVATAR_OPTIONS.find(a => a.id === 'default').url,
+                unlockedAvatars: ['default'],
                 setupComplete: false,
                 createdAt: new Date().toISOString(),
                 level: 1, xp: 0, coins: 50, sp: 5, monthlyXP: 0,
@@ -528,13 +554,23 @@
                 return;
             }
 
-            if (tier.coins) userData.coins += tier.coins;
-            if (tier.sp) userData.sp += tier.sp;
-            if (tier.title) alert(`New Title Unlocked: ${tier.title}!`);
+            let rewardMessage = "";
+            if (tier.type === 'coins') {
+                userData.coins += tier.value;
+                rewardMessage = `${tier.value} Coins`;
+            } else if (tier.type === 'sp') {
+                userData.sp += tier.value;
+                 rewardMessage = `${tier.value} SP`;
+            } else if (tier.type === 'avatar') {
+                if (!userData.unlockedAvatars.includes(tier.value)) {
+                    userData.unlockedAvatars.push(tier.value);
+                }
+                rewardMessage = "New Avatar";
+            }
 
             userData.studyPassProgress.claimedTiers.push(tierIndex);
             saveUserData();
-            alert(`Reward claimed for Tier ${tierIndex + 1}!`);
+            alert(`Reward claimed: ${rewardMessage}!`);
         }
 
         function purchaseShopItem(itemId) {
@@ -684,12 +720,19 @@
                 const isUnlocked = userData.monthlyXP >= tier.xp;
                 const tierEl = document.createElement('div');
                 tierEl.className = `cyber-card p-4 rounded-lg text-center ${!isUnlocked ? 'opacity-50 grayscale' : ''}`;
+
+                let rewardHTML = '';
+                if(tier.type === 'coins') rewardHTML = `<p class="text-yellow-300">${tier.value} Coins</p>`;
+                if(tier.type === 'sp') rewardHTML = `<p class="text-purple-300">${tier.value} SP</p>`;
+                if(tier.type === 'avatar') {
+                    const avatar = AVATAR_OPTIONS.find(a => a.id === tier.value);
+                    rewardHTML = `<img src="${avatar.url}" class="w-16 h-16 rounded-full mx-auto my-2 border-2 border-cyan-400">`;
+                }
+
                 tierEl.innerHTML = `
                     <h4 class="font-bold text-xl text-white">Tier ${index + 1}</h4>
                     <p class="text-gray-400">Requires: ${tier.xp} XP</p>
-                    ${tier.coins ? `<p class="text-yellow-300">${tier.coins} Coins</p>` : ''}
-                    ${tier.sp ? `<p class="text-purple-300">${tier.sp} SP</p>` : ''}
-                    ${tier.title ? `<p class="text-cyan-300">Title: ${tier.title}</p>` : ''}
+                    ${rewardHTML}
                     <button class="cyber-button claim-pass-btn mt-2 py-1 px-3 rounded-lg 
                         ${isClaimed ? 'bg-gray-600/50 text-gray-300' : 'bg-green-500/20 text-green-300'}
                         " data-tier-index="${index}" ${!isUnlocked || isClaimed ? 'disabled' : ''}>
@@ -740,6 +783,34 @@
             }
         }
 
+        function renderAvatarSelectionModal() {
+            const modal = document.getElementById('avatar-selection-modal');
+            const grid = document.getElementById('avatar-grid');
+            if (!modal || !grid || !userData) return;
+
+            grid.innerHTML = '';
+            AVATAR_OPTIONS.forEach(avatar => {
+                const isUnlocked = userData.unlockedAvatars.includes(avatar.id);
+                const isSelected = userData.profilePicUrl === avatar.url;
+
+                const avatarEl = document.createElement('div');
+                avatarEl.className = `relative rounded-full p-1 border-2 ${isSelected ? 'border-cyan-400' : 'border-transparent'}`;
+                avatarEl.innerHTML = `
+                    <img src="${avatar.url}" class="w-24 h-24 rounded-full object-cover ${isUnlocked ? 'cursor-pointer hover:opacity-80' : 'opacity-40 grayscale'}">
+                    ${!isUnlocked ? '<div class="absolute inset-0 bg-black/60 flex items-center justify-center rounded-full"><i class="fas fa-lock text-2xl text-red-500"></i></div>' : ''}
+                `;
+                if(isUnlocked) {
+                    avatarEl.addEventListener('click', async () => {
+                        userData.profilePicUrl = avatar.url;
+                        await saveUserData();
+                        modal.style.display = 'none';
+                    });
+                }
+                grid.appendChild(avatarEl);
+            });
+            modal.style.display = 'flex';
+        }
+
 
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
@@ -754,6 +825,12 @@
                 document.getElementById('auth-title').textContent = isLoginMode ? 'Login' : 'Create Account';
                 document.getElementById('auth-submit-btn').textContent = isLoginMode ? 'Sign In' : 'Create Account';
                 document.getElementById('auth-toggle-text').textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Sign In";
+            });
+
+            // Avatar Selection
+            document.getElementById('profile-avatar-container').addEventListener('click', renderAvatarSelectionModal);
+            document.getElementById('close-avatar-modal-btn').addEventListener('click', () => {
+                document.getElementById('avatar-selection-modal').style.display = 'none';
             });
 
             // Navigation
