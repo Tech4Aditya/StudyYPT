@@ -96,8 +96,10 @@
                 <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-12 h-12 mb-16 rounded-full object-cover">
                 <ul class="space-y-8">
                     <li class="nav-item relative"><a href="#home" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition p-3 bg-cyan-500/20 rounded-lg"><i class="fas fa-compass w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Dashboard</span></a></li>
+                    <li class="nav-item relative"><a href="#leagues" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-shield-halved w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Leagues</span></a></li>
                     <li class="nav-item relative"><a href="#leaderboard" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-trophy w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Leaderboard</span></a></li>
                     <li class="nav-item relative"><a href="#profile" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-user-astronaut w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Profile</span></a></li>
+                    <li class="nav-item relative"><a href="#inventory" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-box-archive w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Inventory</span></a></li>
                     <li class="nav-item relative"><a href="#pass" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-gem w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Study Pass</span></a></li>
                     <li class="nav-item relative"><a href="#shop" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-store w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Shop</span></a></li>
                 </ul>
@@ -150,6 +152,11 @@
                     </div>
                 </div>
                 
+                <div id="leagues" class="page hidden">
+                    <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">League System</h2>
+                    <div id="leagues-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+
                 <div id="leaderboard" class="page hidden">
                     <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Leaderboard</h2>
                     <div class="cyber-card rounded-lg overflow-hidden">
@@ -184,6 +191,12 @@
                     <div id="achievements-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
                 </div>
 
+                 <div id="inventory" class="page hidden">
+                    <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Inventory</h2>
+                    <h3 class="text-2xl font-bold text-cyan-300 mb-4">Unlocked Avatars</h3>
+                    <div id="inventory-avatars-grid" class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"></div>
+                </div>
+
                 <div id="pass" class="page hidden">
                     <h2 class="text-4xl font-bold text-white mb-2 font-orbitron">Season Pass</h2>
                     <p class="text-gray-400 mb-6">Gain monthly XP to unlock exclusive rewards. Resets monthly.</p>
@@ -204,9 +217,7 @@
     <div id="avatar-selection-modal" class="modal items-center justify-center">
         <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-2xl mx-auto modal-content">
             <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Select Avatar</h2>
-            <div id="avatar-grid" class="grid grid-cols-4 md:grid-cols-6 gap-4">
-                <!-- Avatars will be rendered here -->
-            </div>
+            <div id="avatar-grid" class="grid grid-cols-4 md:grid-cols-6 gap-4"></div>
              <div class="flex justify-end pt-6">
                 <button id="close-avatar-modal-btn" class="bg-gray-600/50 hover:bg-gray-500/50 text-white font-bold py-2 px-6 rounded-lg">Close</button>
             </div>
@@ -239,7 +250,7 @@
                 </div>
                 <div>
                     <label for="task-duration" class="block text-sm font-medium text-cyan-300 mb-1">Duration (hours)</label>
-                    <input type="number" id="task-duration" required min="0.5" step="0.5" class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                    <input type="number" id="task-duration" required min="0.5" max="8" step="0.5" class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
                 </div>
                 <div>
                     <label for="task-subject" class="block text-sm font-medium text-cyan-300 mb-1">Subject</label>
@@ -268,7 +279,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -291,19 +302,25 @@
             { id: 'avatar_atom', url: 'https://placehold.co/128x128/16a34a/ffffff?text=⚛️' },
             { id: 'avatar_book', url: 'https://placehold.co/128x128/ca8a04/ffffff?text=📚' },
             { id: 'avatar_globe', url: 'https://placehold.co/128x128/0284c7/ffffff?text=🌍' },
+            { id: 'viper', name: 'Viper', url: 'https://placehold.co/128x128/FFC300/000000?text=V' },
+            { id: 'apex', name: 'Apex', url: 'https://placehold.co/128x128/DAF7A6/000000?text=A' },
+            { id: 'rebel', name: 'Rebel', url: 'https://placehold.co/128x128/FF5733/000000?text=R' }
         ];
         const QUOTES = [ { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" }, { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" }, { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill"} ];
         const LEAGUES = [
             { name: "Bronze", minXP: 0, icon: "fa-solid fa-medal", color: "text-orange-400" }, 
-            { name: "Silver", minXP: 1000, icon: "fa-solid fa-trophy", color: "text-gray-300" },
-            { name: "Gold", minXP: 5000, icon: "fa-solid fa-crown", color: "text-yellow-400" },
-            { name: "Platinum", minXP: 15000, icon: "fa-solid fa-gem", color: "text-blue-400" },
-            { name: "Diamond", minXP: 30000, icon: "fa-solid fa-star", color: "text-purple-400" },
-            { name: "Legend", minXP: 50000, icon: "fa-solid fa-dragon", color: "text-red-500" }
+            { name: "Silver", minXP: 2000, icon: "fa-solid fa-trophy", color: "text-gray-300" },
+            { name: "Gold", minXP: 8000, icon: "fa-solid fa-crown", color: "text-yellow-400" },
+            { name: "Platinum", minXP: 20000, icon: "fa-solid fa-gem", color: "text-blue-400" },
+            { name: "Diamond", minXP: 40000, icon: "fa-solid fa-star", color: "text-purple-400" },
+            { name: "Legend", minXP: 75000, icon: "fa-solid fa-dragon", color: "text-red-500" }
         ];
         const SHOP_ITEMS = [ 
-            { id: 'xp_boost_1', name: 'XP Boost (24hr)', description: '+25% XP from tasks', cost: 200, currency: 'sp', icon: 'fa-bolt' },
-            { id: 'coin_pack_1', name: 'Coin Pack (500)', description: 'Receive 500 bonus coins', cost: 150, currency: 'sp', icon: 'fa-sack-dollar' }
+            { id: 'viper', type: 'avatar', name: 'Viper Avatar', description: 'A sleek, serpentine avatar.', cost: 1000, currency: 'coins' },
+            { id: 'apex', type: 'avatar', name: 'Apex Avatar', description: 'Reach the peak of style.', cost: 500, currency: 'sp' },
+            { id: 'rebel', type: 'avatar', name: 'Rebel Avatar', description: 'For the operative who walks their own path.', cost: 2500, currency: 'coins' },
+            { id: 'title_cyber_ninja', type: 'title', name: 'Title: Cyber-Ninja', description: 'A title for the swift and silent.', cost: 1000, currency: 'sp' },
+            { id: 'sp_pack_1', type: 'currency', name: '100 SP Pack', description: 'Get 100 SP for 2000 Coins.', cost: 2000, currency: 'coins' },
         ];
         const MOCK_ACHIEVEMENTS = [ 
             { id: 'first_mission', name: 'First Mission', description: 'Complete your first task', icon: 'fa-shoe-prints', achieved: false }, 
@@ -401,12 +418,13 @@
                         throw new Error("Username is already taken. Please choose another.");
                     }
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    // This is the crucial fix: create the user document immediately after auth creation.
                     await createInitialUserData(userCredential.user, username);
                 }
             } catch (error) {
                 console.error("Auth error:", error);
-                if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
+                 if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                    alert('Incorrect username or password.');
+                } else if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
                     alert("Authentication failed: Permission Denied.\n\nThis is a Firebase Security Rule issue.\n\nPlease go to your Firebase Console -> Firestore Database -> Rules and add the following rule inside the `match /databases/{database}/documents { ... }` block:\n\nmatch /usernames/{username} {\n  allow read, create: if true;\n}\n\nThis allows the app to check if a username is available before creating an account.");
                 } else {
                      alert(`Authentication failed: ${error.message}`);
@@ -419,15 +437,21 @@
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
                 if (!docSnap.exists()) {
-                    // This is now a fallback/safety net. The main creation path is in handleAuthFormSubmit.
-                    // If a user exists in Auth but not Firestore (e.g., interrupted signup), this will fix it.
-                    const username = user.email.split('@')[0]; // Best guess for a temporary username
+                    const username = user.email.split('@')[0];
                     await createInitialUserData(user, username);
-                    // The listener will fire again after creation, so we return to avoid extra processing.
                     return; 
                 }
 
                 userData = docSnap.data();
+                userData.tasksCompletedToday = userData.tasksCompletedToday || 0;
+
+                const today = new Date().toDateString();
+                if (!userData.lastLoginDate || new Date(userData.lastLoginDate).toDateString() !== today) {
+                    userData.todayXP = 0;
+                    userData.tasksCompletedToday = 0;
+                    userData.lastLoginDate = today;
+                    await saveUserData(); 
+                }
 
                 if (!userData.setupComplete) {
                     document.getElementById('setup-display-name').value = userData.displayName;
@@ -468,10 +492,11 @@
                 email: user.email,
                 profilePicUrl: AVATAR_OPTIONS.find(a => a.id === 'default').url,
                 unlockedAvatars: ['default'],
+                unlockedTitles: [],
                 setupComplete: false,
                 createdAt: new Date().toISOString(),
                 level: 1, xp: 0, coins: 50, sp: 5, monthlyXP: 0,
-                tasks: [], purchasedItems: [], todayXP: 0, achievements: MOCK_ACHIEVEMENTS,
+                tasks: [], purchasedItems: [], todayXP: 0, tasksCompletedToday: 0, achievements: MOCK_ACHIEVEMENTS,
                 studyPassProgress: { claimedTiers: [] },
                 lastLoginDate: today,
                 lastQuoteDate: today
@@ -514,6 +539,11 @@
         }
 
         function completeTask(taskId) {
+            if (userData.tasksCompletedToday >= 20) {
+                alert("You have reached the daily limit of 20 completed tasks. Come back tomorrow!");
+                return;
+            }
+
             const task = userData.tasks.find(t => t.id === taskId);
             if (!task || task.completed) return;
             task.completed = true;
@@ -522,8 +552,8 @@
             userData.monthlyXP += task.xp;
             userData.todayXP += task.xp;
             
-            const xpForNextLevel = userData.level * 100;
-            if (userData.xp + task.xp >= xpForNextLevel) {
+            const xpForNextLevel = Math.floor(Math.pow(userData.level, 1.2) * 100);
+            if (userData.xp + task.xp >= xpForNextLevel && userData.level < 100000) {
                 userData.level++;
                 userData.xp = (userData.xp + task.xp) - xpForNextLevel;
                 checkAchievements('level_5');
@@ -535,7 +565,8 @@
             if (userData.tasks.filter(t => t.completed).length >= 10) {
                  checkAchievements('task_master');
             }
-
+            
+            userData.tasksCompletedToday++;
             saveUserData();
         }
         
@@ -592,8 +623,21 @@
 
             if (item.currency === 'coins') userData.coins -= item.cost;
             if (item.currency === 'sp') userData.sp -= item.cost;
+            
+            let purchasedMessage = `Purchased ${item.name}!`;
+            if (item.type === 'avatar') {
+                if (!userData.unlockedAvatars.includes(item.id)) {
+                    userData.unlockedAvatars.push(item.id);
+                }
+            } else if (item.type === 'title') {
+                 if (!userData.unlockedTitles.includes(item.id)) {
+                    userData.unlockedTitles.push(item.id);
+                }
+            } else if (item.type === 'currency') {
+                userData.sp += 100; // Hardcoded for sp_pack_1
+            }
 
-            alert(`Purchased ${item.name}!`);
+            alert(purchasedMessage);
             saveUserData();
         }
 
@@ -612,7 +656,7 @@
             document.getElementById('dashboard-total-xp').textContent = userData.xp;
             document.getElementById('dashboard-today-xp').textContent = userData.todayXP;
 
-            const xpForNextLevel = userData.level * 100;
+            const xpForNextLevel = Math.floor(Math.pow(userData.level, 1.2) * 100);
             const percentage = xpForNextLevel > 0 ? (userData.xp / xpForNextLevel) * 100 : 0;
             document.getElementById('header-xp-bar').style.width = `${Math.min(100, percentage)}%`;
 
@@ -689,24 +733,92 @@
             });
         }
         
+        async function renderLeaguesPage() {
+            const container = document.getElementById('leagues-container');
+            if(!container || !userData) return;
+
+            const publicProfilesQuery = query(collection(db, `artifacts/${appId}/public/data/leaderboard`));
+            const querySnapshot = await getDocs(publicProfilesQuery);
+            const allPlayers = querySnapshot.docs.map(doc => doc.data());
+            
+            container.innerHTML = '';
+            LEAGUES.forEach((league, index) => {
+                const nextLeague = LEAGUES[index + 1];
+                const playersInLeague = allPlayers.filter(p => {
+                    if(nextLeague) {
+                        return p.monthlyXP >= league.minXP && p.monthlyXP < nextLeague.minXP;
+                    }
+                    return p.monthlyXP >= league.minXP;
+                }).length;
+
+                const isCurrentLeague = userData.monthlyXP >= league.minXP && (!nextLeague || userData.monthlyXP < nextLeague.minXP);
+                let progressHTML = '';
+                if(isCurrentLeague && nextLeague) {
+                    const progress = ((userData.monthlyXP - league.minXP) / (nextLeague.minXP - league.minXP)) * 100;
+                    progressHTML = `
+                        <div class="w-full bg-gray-700 rounded-full h-2.5 mt-3">
+                            <div class="bg-cyan-400 h-2.5 rounded-full" style="width: ${progress}%"></div>
+                        </div>
+                        <p class="text-xs text-gray-300 mt-1">${userData.monthlyXP} / ${nextLeague.minXP} XP to ${nextLeague.name}</p>
+                    `;
+                }
+
+                const leagueCard = document.createElement('div');
+                leagueCard.className = `cyber-card p-6 rounded-lg text-center ${isCurrentLeague ? 'border-2 border-cyan-400' : ''}`;
+                leagueCard.innerHTML = `
+                    <i class="fas ${league.icon} text-6xl ${league.color} mb-4"></i>
+                    <h3 class="text-2xl font-bold text-white font-orbitron">${league.name}</h3>
+                    <p class="text-gray-400">Requires ${league.minXP} XP</p>
+                    <p class="mt-2 text-cyan-300 font-semibold">${playersInLeague} Operatives</p>
+                    ${progressHTML}
+                `;
+                container.appendChild(leagueCard);
+            });
+        }
+
+        function renderInventoryPage() {
+            const grid = document.getElementById('inventory-avatars-grid');
+            if(!grid || !userData) return;
+
+            grid.innerHTML = '';
+            userData.unlockedAvatars.forEach(avatarId => {
+                const avatar = AVATAR_OPTIONS.find(a => a.id === avatarId);
+                if (avatar) {
+                    const isSelected = userData.profilePicUrl === avatar.url;
+                    const avatarEl = document.createElement('div');
+                    avatarEl.className = `relative rounded-full p-1 border-2 ${isSelected ? 'border-cyan-400' : 'border-transparent'}`;
+                    avatarEl.innerHTML = `<img src="${avatar.url}" class="w-24 h-24 rounded-full object-cover">`;
+                    grid.appendChild(avatarEl);
+                }
+            });
+        }
+        
         function renderShop() {
             const container = document.getElementById('shop-container');
-            if (!container) return;
+            if (!container || !userData) return;
             container.innerHTML = '';
             SHOP_ITEMS.forEach(item => {
+                const isOwned = (item.type === 'avatar' && userData.unlockedAvatars.includes(item.id)) || (item.type === 'title' && userData.unlockedTitles.includes(item.id));
                 const itemEl = document.createElement('div');
-                itemEl.className = 'cyber-card p-6 rounded-lg text-center';
+                const currencyIcon = item.currency === 'sp' ? 'fa-database' : 'fa-coins';
+                const currencyColor = item.currency === 'sp' ? 'text-purple-300' : 'text-yellow-300';
+                
+                itemEl.className = `cyber-card p-6 rounded-lg text-center ${isOwned ? 'opacity-50' : ''}`;
                 itemEl.innerHTML = `
-                    <i class="fas ${item.icon} text-5xl text-yellow-400 mb-4"></i>
+                    ${item.type === 'avatar' ? `<img src="${AVATAR_OPTIONS.find(a => a.id === item.id)?.url}" class="w-24 h-24 rounded-full mx-auto mb-4 border-2 border-cyan-500">` : `<i class="fas ${item.icon} text-5xl text-yellow-400 mb-4"></i>`}
                     <h3 class="font-bold text-xl text-white">${item.name}</h3>
-                    <p class="text-gray-400 mb-4">${item.description}</p>
-                    <button class="cyber-button purchase-item-btn bg-purple-500/20 text-purple-300 font-bold py-2 px-4 rounded-lg" data-item-id="${item.id}">
-                        <i class="fas ${item.currency === 'sp' ? 'fa-database' : 'fa-coins'} mr-2"></i>${item.cost} ${item.currency.toUpperCase()}
+                    <p class="text-gray-400 mb-4 h-10">${item.description}</p>
+                    <button class="cyber-button purchase-item-btn ${currencyColor} font-bold py-2 px-4 rounded-lg" data-item-id="${item.id}" ${isOwned ? 'disabled' : ''}>
+                        ${isOwned ? 'Owned' : `<i class="fas ${currencyIcon} mr-2"></i>${item.cost} ${item.currency.toUpperCase()}`}
                     </button>
                 `;
                 container.appendChild(itemEl);
             });
-            document.querySelectorAll('.purchase-item-btn').forEach(btn => btn.addEventListener('click', (e) => purchaseShopItem(e.currentTarget.dataset.itemId)));
+            document.querySelectorAll('.purchase-item-btn').forEach(btn => {
+                if(!btn.disabled) {
+                    btn.addEventListener('click', (e) => purchaseShopItem(e.currentTarget.dataset.itemId))
+                }
+            });
         }
 
         function renderStudyPass() {
@@ -717,7 +829,7 @@
             const totalXPNeeded = STUDY_PASS_REWARDS[STUDY_PASS_REWARDS.length - 1].xp;
             const currentPassXP = userData.monthlyXP;
             const passPercentage = totalXPNeeded > 0 ? (currentPassXP / totalXPNeeded) * 100 : 0;
-            document.getElementById('pass-progress-bar').style.width = `${Math.min(100, percentage)}%`;
+            document.getElementById('pass-progress-bar').style.width = `${Math.min(100, passPercentage)}%`;
             document.getElementById('pass-progress-bar').textContent = `${Math.min(totalXPNeeded, currentPassXP)} / ${totalXPNeeded} XP`;
 
 
@@ -850,8 +962,10 @@
                     e.currentTarget.classList.add('p-3', 'bg-cyan-500/20', 'rounded-lg');
                     document.getElementById('page-title').textContent = e.currentTarget.querySelector('.tooltip').textContent;
                     
+                    if (targetId === 'leagues') renderLeaguesPage();
                     if (targetId === 'leaderboard') renderLeaderboard();
                     if (targetId === 'profile') renderAchievements(); 
+                    if (targetId === 'inventory') renderInventoryPage();
                     if (targetId === 'pass') renderStudyPass();
                     if (targetId === 'shop') renderShop();
                 });
