@@ -400,7 +400,9 @@
                     if (usernameSnap.exists()) {
                         throw new Error("Username is already taken. Please choose another.");
                     }
-                    await createUserWithEmailAndPassword(auth, email, password);
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    // This is the crucial fix: create the user document immediately after auth creation.
+                    await createInitialUserData(userCredential.user, username);
                 }
             } catch (error) {
                 console.error("Auth error:", error);
@@ -417,8 +419,11 @@
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
                 if (!docSnap.exists()) {
-                    const username = user.email.split('@')[0];
+                    // This is now a fallback/safety net. The main creation path is in handleAuthFormSubmit.
+                    // If a user exists in Auth but not Firestore (e.g., interrupted signup), this will fix it.
+                    const username = user.email.split('@')[0]; // Best guess for a temporary username
                     await createInitialUserData(user, username);
+                    // The listener will fire again after creation, so we return to avoid extra processing.
                     return; 
                 }
 
