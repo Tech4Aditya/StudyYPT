@@ -127,9 +127,9 @@
                     <div class="flex items-center space-x-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-700"><i class="fas fa-database text-purple-400"></i><span id="header-user-sp" class="font-bold text-md font-orbitron">0</span></div>
                     <div class="flex items-center space-x-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-700"><i class="fas fa-coins text-yellow-400"></i><span id="header-user-coins" class="font-bold text-md font-orbitron">0</span></div>
                     <div class="flex items-center space-x-3">
-                        <div id="header-user-level" class="font-bold text-md font-orbitron bg-cyan-900/50 border-2 border-cyan-400/50 px-3 py-1 rounded-lg flex items-center gap-2">
-                             <span class="text-cyan-300/80 tracking-widest">LEVEL</span>
-                             <span id="level-text" class="text-white text-lg">1</span>
+                        <div id="header-user-level" class="font-bold text-md font-orbitron bg-cyan-900/50 border-2 border-cyan-400/50 px-3 py-1 rounded-lg flex items-baseline gap-2">
+                             <span class="text-cyan-300/80 tracking-widest text-xs">LEVEL</span>
+                             <span id="level-text" class="text-white text-xl">1</span>
                         </div>
                         <div class="w-32 bg-gray-700 rounded-full h-2.5 border border-gray-600"><div id="header-xp-bar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full xp-bar-progress"></div></div>
                     </div>
@@ -147,12 +147,12 @@
                             <div class="cyber-card p-6 rounded-lg text-center">
                                 <img id="dashboard-profile-pic" class="w-24 h-24 rounded-full mx-auto border-4 border-cyan-400/50 mb-4 object-cover">
                                 <h3 id="dashboard-profile-name" class="text-2xl font-bold text-white font-orbitron"></h3>
-                                <p id="dashboard-profile-league" class="text-cyan-300 font-semibold text-glow"></p>
+                                <p id="dashboard-profile-league" class="text-cyan-300 font-semibold text-glow flex items-center justify-center"></p>
                                 <div class="mt-4 text-left grid grid-cols-2 gap-x-4 gap-y-2 text-gray-300">
                                     <p class="cyber-card p-2 rounded"><i class="fas fa-calendar-day w-5 mr-1 text-cyan-400"></i> XP Today: <strong id="dashboard-today-xp" class="text-white">0</strong></p>
                                     <p class="cyber-card p-2 rounded"><i class="fas fa-fire w-5 mr-1 text-cyan-400"></i> Total XP: <strong id="dashboard-total-xp" class="text-white">0</strong></p>
                                     <p class="cyber-card p-2 rounded"><i class="fas fa-meteor w-5 mr-1 text-cyan-400"></i> Season: <strong id="dashboard-season-number" class="text-white">1</strong></p>
-                                    <p class="cyber-card p-2 rounded"><i class="fas fa-gem w-5 mr-1 text-cyan-400"></i> Pass Tier: <strong id="dashboard-pass-tier" class="text-white">0 / 10</strong></p>
+                                    <p class="cyber-card p-2 rounded"><i class="fas fa-gem w-5 mr-1 text-cyan-400"></i> Pass Tier: <strong id="dashboard-pass-tier" class="text-white">10</strong></p>
                                 </div>
                             </div>
                             <div class="quote-container cyber-card p-6 rounded-lg">
@@ -201,7 +201,12 @@
                         <table class="w-full text-left">
                             <thead>
                                 <tr class="bg-cyan-500/10 text-cyan-300 font-orbitron">
-                                    <th class="p-4">Rank</th><th class="p-4" colspan="2">Operative</th><th class="p-4">Monthly XP</th><th class="p-4">Level</th>
+                                    <th class="p-4">Rank</th>
+                                    <th class="p-4" colspan="2">Operative</th>
+                                    <th class="p-4">League</th>
+                                    <th class="p-4">Pass Tier</th>
+                                    <th class="p-4">Monthly XP</th>
+                                    <th class="p-4">Level</th>
                                 </tr>
                             </thead>
                             <tbody id="leaderboard-body"></tbody>
@@ -350,6 +355,12 @@
         // --- CONSTANTS ---
         const AVATAR_OPTIONS = [
             { id: 'default', url: 'https://placehold.co/128x128/01040a/00ffff?text=S' },
+            { id: 'bronze', name: 'Bronze League', url: 'https://github.com/Tech4Aditya/StudyYPT/blob/main/bronze%20league.jpeg?raw=true' },
+            { id: 'silver', name: 'Silver League', url: 'https://github.com/Tech4Aditya/StudyYPT/blob/main/silver%20league.jpeg?raw=true' },
+            { id: 'gold', name: 'Gold League', url: 'https://github.com/Tech4Aditya/StudyYPT/blob/main/gold%20league.jpeg?raw=true' },
+            { id: 'platinum', name: 'Platinum League', url: 'https://github.com/Tech4Aditya/StudyYPT/blob/main/platinum%20league.jpeg?raw=true' },
+            { id: 'diamond', name: 'Diamond League', url: 'https://github.com/Tech4Aditya/StudyYPT/blob/main/diamond%20league.jpeg?raw=true' },
+            { id: 'legend', name: 'Legend League', url: 'https://github.com/Tech4Aditya/StudyYPT/blob/main/legend%20league.jpeg?raw=true' },
             { id: 'avatar_rocket', url: 'https://placehold.co/128x128/9333ea/ffffff?text=🚀' },
             { id: 'avatar_brain', url: 'https://placehold.co/128x128/be123c/ffffff?text=🧠' },
             { id: 'avatar_atom', url: 'https://placehold.co/128x128/16a34a/ffffff?text=⚛️' },
@@ -361,18 +372,20 @@
         ];
         const QUOTES = [ { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" }, { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" }, { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill"} ];
         const LEAGUES = [
-            { name: "Bronze", minXP: 0, icon: "fa-solid fa-medal", color: "text-orange-400" }, 
-            { name: "Silver", minXP: 2000, icon: "fa-solid fa-trophy", color: "text-gray-300" },
-            { name: "Gold", minXP: 8000, icon: "fa-solid fa-crown", color: "text-yellow-400" },
-            { name: "Platinum", minXP: 20000, icon: "fa-solid fa-gem", color: "text-blue-400" },
-            { name: "Diamond", minXP: 40000, icon: "fa-solid fa-star", color: "text-purple-400" },
-            { name: "Legend", minXP: 75000, icon: "fa-solid fa-dragon", color: "text-red-500" }
+            { id: 'bronze', name: "Bronze", minXP: 0, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/bronze%20league.jpeg?raw=true" },
+            { id: 'silver', name: "Silver", minXP: 2000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/silver%20league.jpeg?raw=true" },
+            { id: 'gold', name: "Gold", minXP: 8000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/gold%20league.jpeg?raw=true" },
+            { id: 'platinum', name: "Platinum", minXP: 20000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/platinum%20league.jpeg?raw=true" },
+            { id: 'diamond', name: "Diamond", minXP: 40000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/diamond%20league.jpeg?raw=true" },
+            { id: 'legend', name: "Legend", minXP: 75000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/legend%20league.jpeg?raw=true" }
         ];
         const SHOP_ITEMS = [ 
             { id: 'viper', type: 'avatar', name: 'Viper Avatar', description: 'A sleek, serpentine avatar.', cost: 1000, currency: 'coins' },
             { id: 'apex', type: 'avatar', name: 'Apex Avatar', description: 'Reach the peak of style.', cost: 500, currency: 'sp' },
             { id: 'rebel', type: 'avatar', name: 'Rebel Avatar', description: 'For the operative who walks their own path.', cost: 2500, currency: 'coins' },
             { id: 'title_cyber_ninja', type: 'title', name: 'Title: Cyber-Ninja', description: 'A title for the swift and silent.', cost: 1000, currency: 'sp' },
+            { id: 'title_quant', type: 'title', name: 'Title: The Quant', description: 'For the master of numbers.', cost: 1500, currency: 'sp' },
+            { id: 'title_physicist', type: 'title', name: 'Title: The Physicist', description: 'For the explorer of reality.', cost: 3000, currency: 'coins' },
             { id: 'sp_pack_1', type: 'currency', name: '100 SP Pack', description: 'Get 100 SP for 2000 Coins.', cost: 2000, currency: 'coins' },
         ];
         const MOCK_ACHIEVEMENTS = [ 
@@ -393,10 +406,12 @@
             { xp: 35000, type: 'avatar', value: 'avatar_globe' }
         ];
         let botsData = [
-            { name: 'Cipher', level: 15, monthlyXP: 12540, profilePicUrl: 'https://placehold.co/40x40/9333ea/ffffff?text=C' }, 
-            { name: 'Glitch', level: 12, monthlyXP: 9870, profilePicUrl: 'https://placehold.co/40x40/be123c/ffffff?text=G' },
-            { name: 'Byte', level: 10, monthlyXP: 7500, profilePicUrl: 'https://placehold.co/40x40/16a34a/ffffff?text=B' }, 
-            { name: 'Vector', level: 8, monthlyXP: 5200, profilePicUrl: 'https://placehold.co/40x40/ca8a04/ffffff?text=V' }
+            { name: 'Wraith', level: 22, monthlyXP: 18500, profilePicUrl: 'https://placehold.co/40x40/9333ea/ffffff?text=W' }, 
+            { name: 'Phoenix', level: 18, monthlyXP: 11200, profilePicUrl: 'https://placehold.co/40x40/be123c/ffffff?text=P' },
+            { name: 'Jett', level: 15, monthlyXP: 9800, profilePicUrl: 'https://placehold.co/40x40/16a34a/ffffff?text=J' }, 
+            { name: 'Sova', level: 12, monthlyXP: 6300, profilePicUrl: 'https://placehold.co/40x40/ca8a04/ffffff?text=S' },
+            { name: 'Raze', level: 9, monthlyXP: 3100, profilePicUrl: 'https://placehold.co/40x40/fb923c/ffffff?text=R' },
+            { name: 'Killjoy', level: 7, monthlyXP: 1500, profilePicUrl: 'https://placehold.co/40x40/facc15/ffffff?text=K' },
         ];
 
         // --- FIREBASE & STATE ---
@@ -467,7 +482,6 @@
                         throw new Error("Username is already taken. Please choose another.");
                     }
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    // This is the crucial fix: create the user document immediately after auth creation.
                     await createInitialUserData(userCredential.user, username);
                 }
             } catch (error) {
@@ -496,10 +510,8 @@
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
                 if (!docSnap.exists()) {
-                    // This is now a fallback/safety net. If a user exists in Auth but not Firestore, this will fix it.
                     const username = user.email ? user.email.split('@')[0] : `operative${Date.now()}`;
                     await createInitialUserData(user, username);
-                    // The listener will automatically re-run after the document is created.
                     return; 
                 }
 
@@ -739,10 +751,29 @@
             saveUserData();
         }
 
+        function checkAndUnlockLeagueAvatars() {
+            if (!userData) return;
+            let changed = false;
+            LEAGUES.forEach(league => {
+                if (userData.monthlyXP >= league.minXP) {
+                    if (!userData.unlockedAvatars.includes(league.id)) {
+                        userData.unlockedAvatars.push(league.id);
+                        changed = true;
+                    }
+                }
+            });
+            if (changed) {
+                saveUserData();
+            }
+        }
+
 
         // --- UI RENDERING ---
         function updateUI() {
             if (!userData) return;
+
+            checkAndUnlockLeagueAvatars(); // Check for new league avatars on every update
+
             const currentLeague = LEAGUES.slice().reverse().find(l => userData.monthlyXP >= l.minXP) || LEAGUES[0];
             const pfpUrl = userData.profilePicUrl || `https://placehold.co/128x128/01040a/00ffff?text=${userData.displayName ? userData.displayName.charAt(0).toUpperCase() : '?'}`;
             const seasonInfo = getSeasonInfo();
@@ -766,13 +797,15 @@
 
             const currentTierIndex = STUDY_PASS_REWARDS.slice().reverse().findIndex(tier => userData.monthlyXP >= tier.xp);
             const totalTiers = STUDY_PASS_REWARDS.length;
-            const displayTier = currentTierIndex === -1 ? 0 : totalTiers - currentTierIndex;
-            document.getElementById('dashboard-pass-tier').textContent = `${displayTier} / ${totalTiers}`;
+            const displayTier = currentTierIndex === -1 ? totalTiers : currentTierIndex + 1;
+
+
+            document.getElementById('dashboard-pass-tier').textContent = `Tier ${displayTier}`;
 
 
             ['header-profile-pic', 'dashboard-profile-pic', 'profile-pic'].forEach(id => document.getElementById(id).src = pfpUrl);
             
-            document.getElementById('dashboard-profile-league').innerHTML = `<i class="fas ${currentLeague.icon} mr-2 ${currentLeague.color}"></i> ${currentLeague.name}`;
+            document.getElementById('dashboard-profile-league').innerHTML = `<img src="${currentLeague.iconUrl}" class="w-6 h-6 mr-2 inline-block rounded-full"> ${currentLeague.name}`;
             document.getElementById('member-since').textContent = new Date(userData.createdAt).toLocaleDateString();
             document.getElementById('profile-name-input').value = userData.displayName;
 
@@ -832,26 +865,38 @@
             
             const leaderboardCol = collection(db, `artifacts/${appId}/public/data/leaderboard`);
             const snapshot = await getDocs(leaderboardCol);
-            const usersFromDB = snapshot.docs.map(doc => doc.data());
+            let usersFromDB = snapshot.docs.map(doc => doc.data());
 
-            if (auth.currentUser && userData && !usersFromDB.some(u => u.uid === auth.currentUser.uid)) {
-                usersFromDB.push({
-                    displayName: userData.displayName, profilePicUrl: userData.profilePicUrl,
-                    monthlyXP: userData.monthlyXP, level: userData.level, uid: userData.uid
-                });
-            }
-
+            // Add bots to the list
+            botsData.forEach(bot => {
+                 // Update bot XP daily
+                const lastUpdate = localStorage.getItem(`bot_update_${bot.name}`);
+                const today = new Date().toDateString();
+                if (lastUpdate !== today) {
+                    bot.monthlyXP += Math.floor(Math.random() * (200 - 30 + 1)) + 30;
+                    localStorage.setItem(`bot_update_${bot.name}`, today);
+                }
+            });
+            
             const allPlayers = [...usersFromDB, ...botsData];
             allPlayers.sort((a, b) => b.monthlyXP - a.monthlyXP);
 
             container.innerHTML = '';
             allPlayers.forEach((player, index) => {
+                const playerLeague = LEAGUES.slice().reverse().find(l => player.monthlyXP >= l.minXP) || LEAGUES[0];
+                const currentTierIndex = STUDY_PASS_REWARDS.slice().reverse().findIndex(tier => player.monthlyXP >= tier.xp);
+                const totalTiers = STUDY_PASS_REWARDS.length;
+                const displayTier = currentTierIndex === -1 ? totalTiers : currentTierIndex + 1;
+
+
                 const row = document.createElement('tr');
                 row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20 text-white' : ''}`;
                 row.innerHTML = `
                     <td class="p-4 font-bold text-lg font-orbitron">${index + 1}</td>
                     <td class="p-4"><img src="${player.profilePicUrl}" class="w-10 h-10 rounded-full object-cover"></td>
                     <td class="p-4 font-semibold">${player.displayName || player.name}</td>
+                    <td class="p-4"><div class="flex items-center"><img src="${playerLeague.iconUrl}" class="w-6 h-6 mr-2 rounded-full"><span class="${playerLeague.color || ''}">${playerLeague.name}</span></div></td>
+                    <td class="p-4 font-orbitron">${displayTier}</td>
                     <td class="p-4 text-cyan-300 font-orbitron">${player.monthlyXP}</td>
                     <td class="p-4 font-orbitron">${player.level}</td>`;
                 container.appendChild(row);
@@ -891,7 +936,7 @@
                 const leagueCard = document.createElement('div');
                 leagueCard.className = `cyber-card p-6 rounded-lg text-center ${isCurrentLeague ? 'border-2 border-cyan-400' : ''}`;
                 leagueCard.innerHTML = `
-                    <i class="fas ${league.icon} text-6xl ${league.color} mb-4"></i>
+                    <img src="${league.iconUrl}" class="w-24 h-24 rounded-full mx-auto mb-4 border-2 ${isCurrentLeague ? 'border-cyan-400' : 'border-gray-700'}">
                     <h3 class="text-2xl font-bold text-white font-orbitron">${league.name}</h3>
                     <p class="text-gray-400">Requires ${league.minXP} XP</p>
                     <p class="mt-2 text-cyan-300 font-semibold">${playersInLeague} Operatives</p>
@@ -995,6 +1040,8 @@
                 const isClaimed = userData.studyPassProgress.claimedTiers.includes(index);
                 const isUnlocked = userData.monthlyXP >= tier.xp;
                 const tierEl = document.createElement('div');
+                const displayTierNumber = STUDY_PASS_REWARDS.length - index;
+
                 tierEl.className = `cyber-card p-4 rounded-lg text-center ${!isUnlocked ? 'opacity-50 grayscale' : ''}`;
 
                 let rewardHTML = '';
@@ -1006,7 +1053,7 @@
                 }
 
                 tierEl.innerHTML = `
-                    <h4 class="font-bold text-xl text-white">Tier ${index + 1}</h4>
+                    <h4 class="font-bold text-xl text-white">Tier ${displayTierNumber}</h4>
                     <p class="text-gray-400">Requires: ${tier.xp} XP</p>
                     ${rewardHTML}
                     <button class="cyber-button claim-pass-btn mt-2 py-1 px-3 rounded-lg 
