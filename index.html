@@ -96,6 +96,7 @@
                 <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-12 h-12 mb-16 rounded-full object-cover">
                 <ul class="space-y-8">
                     <li class="nav-item relative"><a href="#home" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition p-3 bg-cyan-500/20 rounded-lg"><i class="fas fa-compass w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Dashboard</span></a></li>
+                    <li class="nav-item relative"><a href="#calendar" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-calendar-alt w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Calendar</span></a></li>
                     <li class="nav-item relative"><a href="#leagues" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-shield-halved w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Leagues</span></a></li>
                     <li class="nav-item relative"><a href="#leaderboard" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-trophy w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Leaderboard</span></a></li>
                     <li class="nav-item relative"><a href="#profile" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-user-astronaut w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Profile</span></a></li>
@@ -152,6 +153,20 @@
                     </div>
                 </div>
                 
+                <div id="calendar" class="page hidden">
+                    <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Mission Calendar</h2>
+                    <div class="cyber-card p-4 rounded-lg mb-6">
+                        <div class="flex justify-between items-center px-2 mb-2">
+                            <button id="prev-month-btn" class="text-cyan-300 text-2xl"><i class="fas fa-chevron-left"></i></button>
+                            <h3 id="month-year-header" class="text-2xl font-bold text-white font-orbitron"></h3>
+                            <button id="next-month-btn" class="text-cyan-300 text-2xl"><i class="fas fa-chevron-right"></i></button>
+                        </div>
+                        <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center"></div>
+                    </div>
+                    <h3 id="calendar-tasks-header" class="text-2xl font-bold text-white font-orbitron mb-4 hidden">Missions for <span id="selected-date-span"></span></h3>
+                    <div id="calendar-tasks-container" class="space-y-4"></div>
+                </div>
+
                 <div id="leagues" class="page hidden">
                     <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">League System</h2>
                     <div id="leagues-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
@@ -181,9 +196,12 @@
                             </div>
                         </div>
                         <div>
-                            <input id="profile-name-input" class="bg-gray-900/50 text-4xl font-bold text-white p-2 rounded-lg border border-cyan-300/30 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-orbitron" value="User">
-                            <button id="update-profile-btn" class="cyber-button bg-green-500/20 border-green-400 text-green-300 font-bold py-2 px-4 rounded-lg ml-4">Save Changes</button>
-                            <button id="sign-out-btn" class="cyber-button bg-red-500/20 border-red-400 text-red-300 font-bold py-2 px-4 rounded-lg ml-2">Sign Out</button>
+                            <div class="flex items-center">
+                                 <input id="profile-name-input" class="bg-transparent text-4xl font-bold text-white p-2 rounded-lg focus:outline-none focus:ring-2 focus:ring-cyan-500 font-orbitron" value="User">
+                                 <span id="profile-title" class="ml-4 text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1 rounded-full"></span>
+                            </div>
+                            <button id="update-profile-btn" class="cyber-button bg-green-500/20 border-green-400 text-green-300 font-bold py-2 px-4 rounded-lg mt-4">Save Changes</button>
+                            <button id="sign-out-btn" class="cyber-button bg-red-500/20 border-red-400 text-red-300 font-bold py-2 px-4 rounded-lg ml-2 mt-4">Sign Out</button>
                             <p class="text-gray-400 mt-2">Member since: <span id="member-since"></span></p>
                         </div>
                     </div>
@@ -192,9 +210,17 @@
                 </div>
 
                  <div id="inventory" class="page hidden">
-                    <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Inventory</h2>
-                    <h3 class="text-2xl font-bold text-cyan-300 mb-4">Unlocked Avatars</h3>
-                    <div id="inventory-avatars-grid" class="grid grid-cols-4 md:grid-cols-6 lg:grid-cols-8 gap-4"></div>
+                    <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Operative Locker</h2>
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-2">
+                             <h3 class="text-2xl font-bold text-cyan-300 mb-4">Unlocked Avatars</h3>
+                             <div id="inventory-avatars-grid" class="grid grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+                        </div>
+                        <div>
+                             <h3 class="text-2xl font-bold text-cyan-300 mb-4">Unlocked Titles</h3>
+                             <div id="inventory-titles-list" class="space-y-3"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <div id="pass" class="page hidden">
@@ -349,6 +375,7 @@
         let userData;
         let isLoginMode = true;
         let unsubscribeUser; 
+        let currentCalendarDate = new Date();
 
         // --- INITIALIZATION ---
         window.onload = () => {
@@ -422,7 +449,7 @@
                 }
             } catch (error) {
                 console.error("Auth error:", error);
-                 if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found') {
+                 if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.message === "Username not found.") {
                     alert('Incorrect username or password.');
                 } else if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
                     alert("Authentication failed: Permission Denied.\n\nThis is a Firebase Security Rule issue.\n\nPlease go to your Firebase Console -> Firestore Database -> Rules and add the following rule inside the `match /databases/{database}/documents { ... }` block:\n\nmatch /usernames/{username} {\n  allow read, create: if true;\n}\n\nThis allows the app to check if a username is available before creating an account.");
@@ -493,10 +520,11 @@
                 profilePicUrl: AVATAR_OPTIONS.find(a => a.id === 'default').url,
                 unlockedAvatars: ['default'],
                 unlockedTitles: [],
+                equippedTitle: null,
                 setupComplete: false,
                 createdAt: new Date().toISOString(),
                 level: 1, xp: 0, coins: 50, sp: 5, monthlyXP: 0,
-                tasks: [], purchasedItems: [], todayXP: 0, tasksCompletedToday: 0, achievements: MOCK_ACHIEVEMENTS,
+                tasks: {}, purchasedItems: [], todayXP: 0, tasksCompletedToday: 0, achievements: MOCK_ACHIEVEMENTS,
                 studyPassProgress: { claimedTiers: [] },
                 lastLoginDate: today,
                 lastQuoteDate: today
@@ -529,28 +557,47 @@
         }
         
         // --- DATA HANDLING ---
+        function getTodayDateString() {
+            const today = new Date();
+            const year = today.getFullYear();
+            const month = String(today.getMonth() + 1).padStart(2, '0');
+            const day = String(today.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+
         function addTask(title, duration, subject) {
+            const today = getTodayDateString();
+            if(!userData.tasks[today]) {
+                userData.tasks[today] = [];
+            }
+
             const hours = parseFloat(duration); if (isNaN(hours) || hours <= 0) return;
             let xp = (hours === 1) ? 30 : 30 + (hours - 1) * 20;
             const coins = Math.ceil(xp / 2);
             const sp = Math.ceil(xp / 10);
-            userData.tasks.push({ id: `task_${Date.now()}`, title, duration: hours, subject, xp, coins, sp, completed: false });
+            userData.tasks[today].push({ id: `task_${Date.now()}`, title, duration: hours, subject, xp, coins, sp, completed: false });
             saveUserData();
         }
 
-        function completeTask(taskId) {
-            if (userData.tasksCompletedToday >= 20) {
+        function completeTask(taskId, taskDate) {
+            const today = getTodayDateString();
+            if (taskDate === today && userData.tasksCompletedToday >= 20) {
                 alert("You have reached the daily limit of 20 completed tasks. Come back tomorrow!");
                 return;
             }
 
-            const task = userData.tasks.find(t => t.id === taskId);
+            if (!userData.tasks[taskDate]) return;
+            const task = userData.tasks[taskDate].find(t => t.id === taskId);
+
             if (!task || task.completed) return;
             task.completed = true;
             userData.coins += task.coins;
             userData.sp += task.sp;
             userData.monthlyXP += task.xp;
-            userData.todayXP += task.xp;
+            
+            if (taskDate === today) {
+                userData.todayXP += task.xp;
+            }
             
             const xpForNextLevel = Math.floor(Math.pow(userData.level, 1.2) * 100);
             if (userData.xp + task.xp >= xpForNextLevel && userData.level < 100000) {
@@ -562,11 +609,13 @@
             }
 
             checkAchievements('first_mission');
-            if (userData.tasks.filter(t => t.completed).length >= 10) {
+            if (Object.values(userData.tasks).flat().filter(t => t.completed).length >= 10) {
                  checkAchievements('task_master');
             }
             
-            userData.tasksCompletedToday++;
+            if (taskDate === today) {
+                userData.tasksCompletedToday++;
+            }
             saveUserData();
         }
         
@@ -666,6 +715,16 @@
             document.getElementById('member-since').textContent = new Date(userData.createdAt).toLocaleDateString();
             document.getElementById('profile-name-input').value = userData.displayName;
 
+            const profileTitleEl = document.getElementById('profile-title');
+            const equippedTitle = SHOP_ITEMS.find(item => item.id === userData.equippedTitle && item.type === 'title');
+            if (equippedTitle) {
+                profileTitleEl.textContent = equippedTitle.name.replace('Title: ', '');
+                profileTitleEl.style.display = 'inline-block';
+            } else {
+                profileTitleEl.style.display = 'none';
+            }
+
+
             renderTasks();
             renderLeaderboard();
             renderShop();
@@ -674,11 +733,16 @@
             updateDailyQuote();
         }
         
-        function renderTasks() {
-            const container = document.getElementById('daily-tasks-container');
+        function renderTasks(dateString) {
+            const today = getTodayDateString();
+            const targetDate = dateString || today;
+            const container = dateString ? document.getElementById('calendar-tasks-container') : document.getElementById('daily-tasks-container');
+
             if (!container || !userData.tasks) return;
-            container.innerHTML = userData.tasks.length === 0 ? `<div class="text-center text-gray-400 p-8 cyber-card rounded-lg">No missions for today. Add one!</div>` : '';
-            userData.tasks.forEach(task => {
+            const tasksForDay = userData.tasks[targetDate] || [];
+
+            container.innerHTML = tasksForDay.length === 0 ? `<div class="text-center text-gray-400 p-8 cyber-card rounded-lg">No missions for this day.</div>` : '';
+            tasksForDay.forEach(task => {
                 const el = document.createElement('div');
                 el.className = `cyber-card p-4 rounded-lg flex items-center justify-between transition-all duration-300 ${task.completed ? 'opacity-40' : 'hover:border-cyan-400'}`;
                 el.innerHTML = `
@@ -693,12 +757,12 @@
                         <p class="font-semibold text-cyan-300">+${task.xp} XP</p>
                         <p class="font-semibold text-yellow-400">+${task.coins} C / <span class="text-purple-400">+${task.sp} SP</span></p>
                     </div>
-                    <button class="task-complete-btn ml-6 cyber-button text-white font-bold py-2 px-4 rounded-lg ${task.completed ? 'bg-gray-600/50 border-gray-500' : 'bg-green-500/20 border-green-400'}" data-task-id="${task.id}" ${task.completed ? 'disabled' : ''}>
+                    <button class="task-complete-btn ml-6 cyber-button text-white font-bold py-2 px-4 rounded-lg ${task.completed ? 'bg-gray-600/50 border-gray-500' : 'bg-green-500/20 border-green-400'}" data-task-id="${task.id}" data-task-date="${targetDate}" ${task.completed ? 'disabled' : ''}>
                         ${task.completed ? '<i class="fas fa-check"></i>' : 'Complete'}
                     </button>`;
                 container.appendChild(el);
             });
-             document.querySelectorAll('.task-complete-btn').forEach(btn => btn.addEventListener('click', (e) => completeTask(e.currentTarget.dataset.taskId)));
+             document.querySelectorAll('.task-complete-btn').forEach(btn => btn.addEventListener('click', (e) => completeTask(e.currentTarget.dataset.taskId, e.currentTarget.dataset.taskDate)));
         }
 
         async function renderLeaderboard() {
@@ -777,20 +841,53 @@
         }
 
         function renderInventoryPage() {
-            const grid = document.getElementById('inventory-avatars-grid');
-            if(!grid || !userData) return;
+            const avatarGrid = document.getElementById('inventory-avatars-grid');
+            const titlesList = document.getElementById('inventory-titles-list');
+            if(!avatarGrid || !titlesList || !userData) return;
 
-            grid.innerHTML = '';
+            avatarGrid.innerHTML = '';
             userData.unlockedAvatars.forEach(avatarId => {
                 const avatar = AVATAR_OPTIONS.find(a => a.id === avatarId);
                 if (avatar) {
                     const isSelected = userData.profilePicUrl === avatar.url;
                     const avatarEl = document.createElement('div');
-                    avatarEl.className = `relative rounded-full p-1 border-2 ${isSelected ? 'border-cyan-400' : 'border-transparent'}`;
-                    avatarEl.innerHTML = `<img src="${avatar.url}" class="w-24 h-24 rounded-full object-cover">`;
-                    grid.appendChild(avatarEl);
+                    avatarEl.className = `relative cyber-card p-2 rounded-lg flex items-center justify-center ${isSelected ? 'border-cyan-400 border-2' : ''}`;
+                    avatarEl.innerHTML = `
+                        <img src="${avatar.url}" class="w-24 h-24 rounded-lg object-cover">
+                        ${isSelected ? '<div class="absolute top-1 right-1 bg-green-500 rounded-full p-1"><i class="fas fa-check text-white"></i></div>' : ''}
+                    `;
+                    avatarGrid.appendChild(avatarEl);
                 }
             });
+
+            titlesList.innerHTML = '';
+            if (!userData.unlockedTitles || userData.unlockedTitles.length === 0) {
+                 titlesList.innerHTML = '<p class="text-gray-400">No titles unlocked. Visit the shop!</p>';
+            }
+            userData.unlockedTitles.forEach(titleId => {
+                const title = SHOP_ITEMS.find(item => item.id === titleId);
+                if (title) {
+                    const isEquipped = userData.equippedTitle === title.id;
+                    const titleEl = document.createElement('div');
+                    titleEl.className = 'cyber-card p-3 rounded-lg flex justify-between items-center';
+                    titleEl.innerHTML = `
+                        <span class="font-semibold text-white">${title.name.replace('Title: ', '')}</span>
+                        <button class="equip-title-btn cyber-button text-sm py-1 px-3 rounded-md ${isEquipped ? 'bg-gray-600/50 text-gray-300' : 'bg-cyan-500/20 text-cyan-300'}" data-title-id="${title.id}" ${isEquipped ? 'disabled' : ''}>
+                            ${isEquipped ? 'Equipped' : 'Equip'}
+                        </button>
+                    `;
+                    titlesList.appendChild(titleEl);
+                }
+            });
+            document.querySelectorAll('.equip-title-btn').forEach(btn => {
+                if(!btn.disabled) {
+                    btn.addEventListener('click', async (e) => {
+                        const titleId = e.currentTarget.dataset.titleId;
+                        userData.equippedTitle = titleId;
+                        await saveUserData();
+                    });
+                }
+            })
         }
         
         function renderShop() {
@@ -929,6 +1026,47 @@
             modal.style.display = 'flex';
         }
 
+        function renderCalendar() {
+            const grid = document.getElementById('calendar-grid');
+            const header = document.getElementById('month-year-header');
+            if (!grid || !header) return;
+
+            grid.innerHTML = ''; // Clear previous
+            const month = currentCalendarDate.getMonth();
+            const year = currentCalendarDate.getFullYear();
+            
+            header.textContent = `${currentCalendarDate.toLocaleString('default', { month: 'long' })} ${year}`;
+
+            const firstDay = new Date(year, month, 1).getDay();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+
+            // Add weekday headers
+            ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(day => {
+                grid.innerHTML += `<div class="font-bold text-cyan-300">${day}</div>`;
+            });
+
+            for (let i = 0; i < firstDay; i++) {
+                grid.innerHTML += `<div></div>`;
+            }
+
+            for (let day = 1; day <= daysInMonth; day++) {
+                const dateString = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const hasTasks = userData.tasks[dateString] && userData.tasks[dateString].length > 0;
+                const isToday = new Date().toDateString() === new Date(year, month, day).toDateString();
+                
+                const dayEl = document.createElement('div');
+                dayEl.textContent = day;
+                dayEl.className = `p-2 rounded-full cursor-pointer hover:bg-cyan-500/20 ${isToday ? 'bg-cyan-500/30 font-bold' : ''} ${hasTasks ? 'border border-cyan-400' : ''}`;
+                dayEl.dataset.date = dateString;
+                dayEl.addEventListener('click', () => {
+                    document.getElementById('calendar-tasks-header').classList.remove('hidden');
+                    document.getElementById('selected-date-span').textContent = new Date(dateString + 'T00:00:00').toLocaleDateString();
+                    renderTasks(dateString);
+                });
+                grid.appendChild(dayEl);
+            }
+        }
+
 
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
@@ -951,6 +1089,17 @@
                 document.getElementById('avatar-selection-modal').style.display = 'none';
             });
 
+            // Calendar Navigation
+            document.getElementById('prev-month-btn').addEventListener('click', () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
+                renderCalendar();
+            });
+            document.getElementById('next-month-btn').addEventListener('click', () => {
+                currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
+                renderCalendar();
+            });
+
+
             // Navigation
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', e => {
@@ -962,6 +1111,7 @@
                     e.currentTarget.classList.add('p-3', 'bg-cyan-500/20', 'rounded-lg');
                     document.getElementById('page-title').textContent = e.currentTarget.querySelector('.tooltip').textContent;
                     
+                    if (targetId === 'calendar') renderCalendar();
                     if (targetId === 'leagues') renderLeaguesPage();
                     if (targetId === 'leaderboard') renderLeaderboard();
                     if (targetId === 'profile') renderAchievements(); 
