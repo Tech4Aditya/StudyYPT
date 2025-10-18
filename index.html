@@ -334,10 +334,10 @@
         };
 
         function setupAuthObserver() {
-            onAuthStateChanged(auth, async user => {
+            onAuthStateChanged(auth, user => {
                 if (unsubscribeUser) unsubscribeUser(); 
                 if (user) {
-                    await loadUserData(user);
+                    loadUserData(user);
                 } else {
                     document.getElementById('login-view').classList.remove('hidden');
                     document.getElementById('app-view').classList.add('hidden');
@@ -388,34 +388,46 @@
                         throw new Error("Username is already taken. Please choose another.");
                     }
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                    await createInitialUserData(userCredential.user, username);
+                    // The onAuthStateChanged listener will now handle the next steps
                 }
             } catch (error) {
-                alert(`Authentication failed: ${error.message}`);
                 console.error("Auth error:", error);
+                if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
+                    alert("Authentication failed: Permission Denied.\n\nThis is a Firebase Security Rule issue.\n\nPlease go to your Firebase Console -> Firestore Database -> Rules and add the following rule inside the `match /databases/{database}/documents { ... }` block:\n\nmatch /usernames/{username} {\n  allow read, create: if true;\n}\n\nThis allows the app to check if a username is available before creating an account.");
+                } else {
+                     alert(`Authentication failed: ${error.message}`);
+                }
             }
         }
         
         // --- PERSISTENCE (Firestore) ---
         async function loadUserData(user) {
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
-            unsubscribeUser = onSnapshot(userRef, (docSnap) => {
-                if (docSnap.exists()) {
-                    userData = docSnap.data();
+            unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
+                if (!docSnap.exists()) {
+                    // This is a brand new user, regardless of sign-in method.
+                    // We need to create their initial document.
+                    // Note: We need the username from the form, which we don't have here.
+                    // So we create a placeholder document first. The setup modal will then update it.
+                    const username = user.email.split('@')[0]; // Best guess for a temporary username
+                    await createInitialUserData(user, username);
+                    // The listener will fire again immediately after creation, entering the 'exists' block.
+                    return; 
+                }
 
-                    if (!userData.setupComplete) {
-                        document.getElementById('setup-display-name').value = userData.displayName;
-                        document.getElementById('first-time-setup-modal').style.display = 'flex';
-                    } else {
-                        document.getElementById('login-view').classList.add('hidden');
-                        document.getElementById('app-view').classList.remove('hidden');
-                        document.getElementById('first-time-setup-modal').style.display = 'none';
-                        updateUI();
-                    }
-                } else {
-                    // This case is for Google Sign-In which is removed, but we keep the modal trigger as a fallback.
-                     // A user created with email/pass should have a doc created immediately, so this is a safety net.
+                // Document exists, proceed.
+                userData = docSnap.data();
+
+                if (!userData.setupComplete) {
+                    // User exists but hasn't finished setup. Show the modal.
+                    document.getElementById('setup-display-name').value = userData.displayName;
                     document.getElementById('first-time-setup-modal').style.display = 'flex';
+                } else {
+                    // User is fully set up. Show the app.
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('app-view').classList.remove('hidden');
+                    document.getElementById('first-time-setup-modal').style.display = 'none';
+                    updateUI();
                 }
             });
         }
@@ -856,6 +868,5 @@
     </script>
 </body>
 </html>
-
 
 
