@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StudyYPT</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            -ms-overflow-style: none; scrollbar-width: none;
+            background-color: #000;
+            overflow: hidden;
+        }
+        body::-webkit-scrollbar { display: none; }
+        h1, h2, h3, h4, .font-orbitron { font-family: 'Orbitron', sans-serif; }
+        .xp-bar-progress { transition: width 0.5s ease-in-out; }
+        .text-glow { text-shadow: 0 0 6px rgba(0, 255, 255, 0.7), 0 0 10px rgba(0, 255, 255, 0.5); }
+        .nav-item .tooltip {
+            visibility: hidden; opacity: 0; transition: opacity 0.2s, visibility 0.2s;
+            position: absolute; left: 110%; top: 50%; transform: translateY(-50%); white-space: nowrap;
+        }
+        .nav-item:hover .tooltip { visibility: visible; opacity: 1; }
+        .modal {
+            display: none; position: fixed; z-index: 50; left: 0; top: 0; width: 100%; height: 100%;
+            overflow: auto; background-color: rgba(0,0,0,0.7); backdrop-filter: blur(8px);
+            animation: fadeIn 0.3s;
+        }
+        .modal-content { animation: slideIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+        @keyframes slideIn { from { transform: translateY(-30px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        
+        /* Live Background */
+        .background-container { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; overflow: hidden; background: #01040a; }
+        .stars, .twinkling, .clouds { position: absolute; top: 0; left: 0; right: 0; bottom: 0; width: 100%; height: 100%; display: block; }
+        .stars { background: #000 url(https://www.script-tutorials.com/demos/360/images/stars.png) repeat top center; z-index: 0; }
+        .twinkling { background: transparent url(https://www.script-tutorials.com/demos/360/images/twinkling.png) repeat top center; z-index: 1; animation: move-twink-back 200s linear infinite; }
+        .clouds { background: transparent url(https://www.script-tutorials.com/demos/360/images/clouds.png) repeat top center; z-index: 2; opacity: .4; animation: move-clouds-back 200s linear infinite; }
+        
+        @keyframes move-twink-back { from { background-position: 0 0; } to { background-position: -10000px 5000px; } }
+        @keyframes move-clouds-back { from { background-position: 0 0; } to { background-position: 10000px 0; } }
+
+        /* Custom UI Elements */
+        .cyber-card {
+            background: rgba(13, 22, 45, 0.5); backdrop-filter: blur(10px);
+            border: 1px solid rgba(0, 255, 255, 0.3);
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.1), inset 0 0 15px rgba(0, 255, 255, 0.05);
+        }
+        .cyber-button {
+            border: 1px solid rgba(0, 255, 255, 0.5);
+            box-shadow: 0 0 10px rgba(0, 255, 255, 0.3);
+            transition: all 0.2s ease-in-out;
+        }
+        .cyber-button:hover {
+            box-shadow: 0 0 20px rgba(0, 255, 255, 0.7);
+            background: rgba(0, 255, 255, 0.1);
+        }
+        .main-content-area {
+             overflow-y: auto;
+             height: calc(100vh - 73px);
+        }
+        .main-content-area::-webkit-scrollbar { width: 8px; }
+        .main-content-area::-webkit-scrollbar-track { background: transparent; }
+        .main-content-area::-webkit-scrollbar-thumb { background-color: rgba(0, 255, 255, 0.3); border-radius: 4px; border: 1px solid rgba(0, 255, 255, 0.5); }
+    </style>
+</head>
+<body class="text-gray-200 antialiased">
+    <div class="background-container">
+        <div class="stars"></div>
+        <div class="twinkling"></div>
+        <div class="clouds"></div>
+    </div>
+    
+    <!-- Login View --><div id="login-view" class="h-screen w-full flex items-center justify-center">
+        <div class="cyber-card p-8 rounded-lg w-full max-w-md">
+            <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-24 mx-auto mb-4">
+            <h1 id="auth-title" class="text-3xl font-bold text-white text-glow font-orbitron mb-6 text-center">Login</h1>
+            
+            <form id="auth-form" class="space-y-4">
+                <input type="text" id="username-input" placeholder="Username" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                <input type="email" id="email-input" placeholder="Email (needed for account creation)" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500 hidden">
+                <input type="password" id="password-input" placeholder="Password" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                <button type="submit" id="auth-submit-btn" class="cyber-button w-full bg-cyan-500/20 text-cyan-300 font-bold py-2 px-6 rounded-lg">Sign In</button>
+            </form>
+            
+            <p id="auth-toggle-text" class="text-center mt-6 text-cyan-300 cursor-pointer">Don't have an account? Create one</p>
+        </div>
+    </div>
+
+    <!-- Main App View --><div id="app-view" class="h-screen w-full flex bg-black/10 hidden">
+        <!-- Icon Sidebar --><nav class="w-20 bg-black/30 backdrop-blur-lg border-r border-cyan-300/20 p-4 flex flex-col items-center justify-between">
+            <div>
+                <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-12 h-12 mb-16 rounded-full object-cover">
+                <ul class="space-y-8">
+                    <li class="nav-item relative"><a href="#home" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition p-3 bg-cyan-500/20 rounded-lg"><i class="fas fa-compass w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Dashboard</span></a></li>
+                    <li class="nav-item relative"><a href="#leaderboard" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-trophy w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Leaderboard</span></a></li>
+                    <li class="nav-item relative"><a href="#profile" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-user-astronaut w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Profile</span></a></li>
+                    <li class="nav-item relative"><a href="#pass" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-gem w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Study Pass</span></a></li>
+                    <li class="nav-item relative"><a href="#shop" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-store w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Shop</span></a></li>
+                </ul>
+            </div>
+            <div class="text-center text-xs text-cyan-300/50 font-semibold tracking-wider font-orbitron">Made with ❤️<br>by aditya</div>
+        </nav>
+        
+        <!-- Main Area --><div class="flex-1 flex flex-col">
+            <!-- Header --><header class="bg-black/10 backdrop-blur-lg border-b border-cyan-300/20 p-4 flex justify-between items-center z-10">
+                <div><h2 id="page-title" class="text-3xl font-bold text-white text-glow font-orbitron">Dashboard</h2></div>
+                <div class="flex items-center space-x-4">
+                    <div class="flex items-center space-x-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-700"><i class="fas fa-database text-purple-400"></i><span id="header-user-sp" class="font-bold text-md font-orbitron">0</span></div>
+                    <div class="flex items-center space-x-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-700"><i class="fas fa-coins text-yellow-400"></i><span id="header-user-coins" class="font-bold text-md font-orbitron">0</span></div>
+                    <div class="flex items-center space-x-3">
+                        <div id="header-user-level" class="font-bold text-md font-orbitron border-2 border-cyan-400/50 px-2 rounded-md">LVL 1</div>
+                        <div class="w-32 bg-gray-700 rounded-full h-2.5 border border-gray-600"><div id="header-xp-bar" class="bg-gradient-to-r from-cyan-400 to-blue-500 h-full rounded-full xp-bar-progress"></div></div>
+                    </div>
+                    <div class="flex items-center space-x-3">
+                        <span id="header-user-name" class="font-semibold">User</span>
+                        <img id="header-profile-pic" src="https://placehold.co/40x40/1f2937/ffffff?text=U" class="w-10 h-10 rounded-full border-2 border-cyan-400 object-cover">
+                    </div>
+                </div>
+            </header>
+
+            <!-- Main Content --><main class="main-content-area p-8">
+                <div id="home" class="page">
+                     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                        <div class="lg:col-span-1 space-y-8">
+                            <div class="cyber-card p-6 rounded-lg text-center">
+                                <img id="dashboard-profile-pic" class="w-24 h-24 rounded-full mx-auto border-4 border-cyan-400/50 mb-4 object-cover">
+                                <h3 id="dashboard-profile-name" class="text-2xl font-bold text-white font-orbitron"></h3>
+                                <p id="dashboard-profile-league" class="text-cyan-300 font-semibold text-glow"></p>
+                                <div class="mt-4 text-left grid grid-cols-2 gap-4 text-gray-300">
+                                    <p class="cyber-card p-2 rounded"><i class="fas fa-calendar-day w-5 mr-1 text-cyan-400"></i> XP Today: <strong id="dashboard-today-xp" class="text-white">0</strong></p>
+                                    <p class="cyber-card p-2 rounded"><i class="fas fa-fire w-5 mr-1 text-cyan-400"></i> Total XP: <strong id="dashboard-total-xp" class="text-white">0</strong></p>
+                                </div>
+                            </div>
+                            <div class="quote-container cyber-card p-6 rounded-lg">
+                                <p id="quote-text" class="text-lg italic text-gray-300"></p>
+                                <p id="quote-author" class="text-right font-semibold text-cyan-300 mt-2"></p>
+                            </div>
+                        </div>
+                        <div class="lg:col-span-2">
+                             <div class="flex justify-between items-center mb-4">
+                                <h3 class="text-3xl font-bold text-white font-orbitron">Today's Missions</h3>
+                                <button id="add-task-btn" class="cyber-button text-cyan-300 font-bold py-2 px-4 rounded-lg flex items-center gap-2"><i class="fas fa-plus"></i> Add Task</button>
+                            </div>
+                            <div id="daily-tasks-container" class="space-y-4"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="leaderboard" class="page hidden">
+                    <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Leaderboard</h2>
+                    <div class="cyber-card rounded-lg overflow-hidden">
+                        <table class="w-full text-left">
+                            <thead>
+                                <tr class="bg-cyan-500/10 text-cyan-300 font-orbitron">
+                                    <th class="p-4">Rank</th><th class="p-4" colspan="2">Operative</th><th class="p-4">Monthly XP</th><th class="p-4">Level</th>
+                                </tr>
+                            </thead>
+                            <tbody id="leaderboard-body"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div id="profile" class="page hidden">
+                     <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Operative Profile</h2>
+                    <div class="cyber-card p-8 rounded-lg flex items-center space-x-8">
+                        <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
+                        <div>
+                            <input id="profile-name-input" class="bg-gray-900/50 text-4xl font-bold text-white p-2 rounded-lg border border-cyan-300/30 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-orbitron" value="User">
+                            <button id="update-profile-btn" class="cyber-button bg-green-500/20 border-green-400 text-green-300 font-bold py-2 px-4 rounded-lg ml-4">Save Changes</button>
+                            <button id="sign-out-btn" class="cyber-button bg-red-500/20 border-red-400 text-red-300 font-bold py-2 px-4 rounded-lg ml-2">Sign Out</button>
+                            <p class="text-gray-400 mt-2">Member since: <span id="member-since"></span></p>
+                        </div>
+                    </div>
+                    <h3 class="text-3xl font-bold mt-8 mb-4 text-white font-orbitron">Achievements</h3>
+                    <div id="achievements-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+                </div>
+
+                <div id="pass" class="page hidden">
+                    <h2 class="text-4xl font-bold text-white mb-2 font-orbitron">Season Pass</h2>
+                    <p class="text-gray-400 mb-6">Gain monthly XP to unlock exclusive rewards. Resets monthly.</p>
+                    <div class="w-full bg-black/50 rounded-full h-6 border border-cyan-300/30 mb-8 cyber-card p-1">
+                        <div id="pass-progress-bar" class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 h-full rounded-full flex items-center justify-center text-sm font-bold xp-bar-progress" style="width: 0%;"></div>
+                    </div>
+                    <div id="study-pass-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+                </div>
+                <div id="shop" class="page hidden">
+                     <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Supply Depot</h2>
+                    <div id="shop-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                </div>
+            </main>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="first-time-setup-modal" class="modal items-center justify-center">
+        <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-md mx-auto modal-content">
+            <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Welcome, Operative!</h2>
+            <p class="text-gray-400 mb-6">Let's set up your display name.</p>
+            <form id="first-time-setup-form" class="space-y-4">
+                 <div>
+                    <label for="setup-display-name" class="block text-sm font-medium text-cyan-300 mb-1">Choose your Display Name</label>
+                    <input type="text" id="setup-display-name" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                </div>
+                <div class="flex justify-center pt-4">
+                    <button type="submit" class="cyber-button bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 font-bold py-2 px-6 rounded-lg">Complete Setup</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="add-task-modal" class="modal items-center justify-center">
+        <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-md mx-auto modal-content">
+            <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Add New Mission</h2>
+            <form id="add-task-form" class="space-y-4">
+                 <div>
+                    <label for="task-title" class="block text-sm font-medium text-cyan-300 mb-1">Mission Title</label>
+                    <input type="text" id="task-title" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                </div>
+                <div>
+                    <label for="task-duration" class="block text-sm font-medium text-cyan-300 mb-1">Duration (hours)</label>
+                    <input type="number" id="task-duration" required min="0.5" step="0.5" class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                </div>
+                <div>
+                    <label for="task-subject" class="block text-sm font-medium text-cyan-300 mb-1">Subject</label>
+                    <select id="task-subject" class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                        <option>Basic Electronics</option>
+                        <option>Software Dev</option>
+                        <option>Maths</option>
+                        <option>Physics</option>
+                        <option>English</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+                <div id="other-subject-container" class="hidden">
+                    <label for="task-subject-other" class="block text-sm font-medium text-cyan-300 mb-1">Custom Subject</label>
+                    <input type="text" id="task-subject-other" class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                </div>
+                <div class="flex justify-end gap-4 pt-4">
+                    <button type="button" id="cancel-add-task-btn" class="bg-gray-600/50 hover:bg-gray-500/50 text-white font-bold py-2 px-6 rounded-lg">Cancel</button>
+                    <button type="submit" class="cyber-button bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 font-bold py-2 px-6 rounded-lg">Add Mission</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script type="module">
+        // Firebase Imports
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+        import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        
+        // --- FIREBASE CONFIGURATION ---
+        const firebaseConfig = {
+          apiKey: "AIzaSyDv_NELQ4t4vDGsjjGYjjClt7tw1PXiNjg",
+          authDomain: "studyypt-1fa01.firebaseapp.com",
+          projectId: "studyypt-1fa01",
+          storageBucket: "studyypt-1fa01.appspot.com",
+          messagingSenderId: "366344997103",
+          appId: "1:366344997103:web:2021dd4fab722caf2b331a",
+          measurementId: "G-8L0G02Q5WE"
+        };
+        
+        const appId = "studyypt-1fa01";
+
+        // --- CONSTANTS ---
+        const QUOTES = [ { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" }, { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" }, { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill"} ];
+        const LEAGUES = [
+            { name: "Bronze", minXP: 0, icon: "fa-solid fa-medal", color: "text-orange-400" }, 
+            { name: "Silver", minXP: 1000, icon: "fa-solid fa-trophy", color: "text-gray-300" },
+            { name: "Gold", minXP: 5000, icon: "fa-solid fa-crown", color: "text-yellow-400" },
+            { name: "Platinum", minXP: 15000, icon: "fa-solid fa-gem", color: "text-blue-400" },
+            { name: "Diamond", minXP: 30000, icon: "fa-solid fa-star", color: "text-purple-400" },
+            { name: "Legend", minXP: 50000, icon: "fa-solid fa-dragon", color: "text-red-500" }
+        ];
+        const SHOP_ITEMS = [ 
+            { id: 'xp_boost_1', name: 'XP Boost (24hr)', description: '+25% XP from tasks', cost: 200, currency: 'sp', icon: 'fa-bolt' },
+            { id: 'coin_pack_1', name: 'Coin Pack (500)', description: 'Receive 500 bonus coins', cost: 150, currency: 'sp', icon: 'fa-sack-dollar' }
+        ];
+        const MOCK_ACHIEVEMENTS = [ 
+            { id: 'first_mission', name: 'First Mission', description: 'Complete your first task', icon: 'fa-shoe-prints', achieved: false }, 
+            { id: 'task_master', name: 'Task Master', description: 'Complete 10 tasks', icon: 'fa-tasks', achieved: false },
+            { id: 'level_5', name: 'Ascendant', description: 'Reach Level 5', icon: 'fa-arrow-up', achieved: false }
+        ];
+        const STUDY_PASS_REWARDS = [ 
+            { xp: 0, coins: 50, sp: 20, title: "Rookie" },
+            { xp: 1000, coins: 100, sp: 30, title: "Apprentice" },
+            { xp: 2500, coins: 150, sp: 40, title: "Journeyman" },
+            { xp: 5000, coins: 200, sp: 50, title: "Scholar" },
+            { xp: 7500, coins: 250, sp: 60, title: "Adept" },
+            { xp: 10000, coins: 300, sp: 70, title: "Mastermind" },
+            { xp: 15000, coins: 400, sp: 80, title: "Grandmaster" },
+            { xp: 20000, coins: 500, sp: 100, title: "Legendary" }
+        ];
+        let botsData = [
+            { name: 'Cipher', level: 15, monthlyXP: 12540, profilePicUrl: 'https://placehold.co/40x40/9333ea/ffffff?text=C' }, 
+            { name: 'Glitch', level: 12, monthlyXP: 9870, profilePicUrl: 'https://placehold.co/40x40/be123c/ffffff?text=G' },
+            { name: 'Byte', level: 10, monthlyXP: 7500, profilePicUrl: 'https://placehold.co/40x40/16a34a/ffffff?text=B' }, 
+            { name: 'Vector', level: 8, monthlyXP: 5200, profilePicUrl: 'https://placehold.co/40x40/ca8a04/ffffff?text=V' }
+        ];
+
+        // --- FIREBASE & STATE ---
+        let app, auth, db;
+        let userData;
+        let isLoginMode = true;
+        let unsubscribeUser; 
+
+        // --- INITIALIZATION ---
+        window.onload = () => {
+             if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
+                app = initializeApp(firebaseConfig);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                setupAuthObserver();
+            } else {
+                document.getElementById('login-view').innerHTML = '<p class="text-red-500 text-center">Firebase config is missing or invalid. Please check the script.</p>';
+            }
+            setupEventListeners();
+        };
+
+        function setupAuthObserver() {
+            onAuthStateChanged(auth, async user => {
+                if (unsubscribeUser) unsubscribeUser(); 
+                if (user) {
+                    await loadUserData(user);
+                } else {
+                    document.getElementById('login-view').classList.remove('hidden');
+                    document.getElementById('app-view').classList.add('hidden');
+                    document.getElementById('first-time-setup-modal').style.display = 'none';
+                    userData = null;
+                }
+            });
+        }
+        
+        async function signOutUser() {
+            try {
+                await signOut(auth);
+                console.log("User signed out successfully.");
+            } catch (error) {
+                console.error("Sign out failed:", error);
+                alert("Sign out failed: " + error.message);
+            }
+        }
+
+        async function handleAuthFormSubmit(e) {
+            e.preventDefault();
+            const username = document.getElementById('username-input').value.trim().toLowerCase();
+            const password = document.getElementById('password-input').value;
+
+            if (!username || !password) {
+                alert("Please fill in all fields.");
+                return;
+            }
+
+            try {
+                if (isLoginMode) {
+                    const usernameRef = doc(db, `usernames/${username}`);
+                    const usernameSnap = await getDoc(usernameRef);
+                    if (!usernameSnap.exists()) {
+                        throw new Error("Username not found.");
+                    }
+                    const usernameDocData = usernameSnap.data();
+                    await signInWithEmailAndPassword(auth, usernameDocData.email, password);
+                } else {
+                    const email = document.getElementById('email-input').value;
+                    if(!email) {
+                        alert("Please provide an email to create an account.");
+                        return;
+                    }
+                    const usernameRef = doc(db, `usernames/${username}`);
+                    const usernameSnap = await getDoc(usernameRef);
+                    if (usernameSnap.exists()) {
+                        throw new Error("Username is already taken. Please choose another.");
+                    }
+                    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                    await createInitialUserData(userCredential.user, username);
+                }
+            } catch (error) {
+                console.error("Auth error:", error);
+                if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
+                    alert("Authentication failed: Permission Denied.\n\nThis is a Firebase Security Rule issue.\n\nPlease go to your Firebase Console -> Firestore Database -> Rules and add the following rule inside the `match /databases/{database}/documents { ... }` block:\n\nmatch /usernames/{username} {\n  allow read, create: if true;\n}\n\nThis allows the app to check if a username is available before creating an account.");
+                } else {
+                     alert(`Authentication failed: ${error.message}`);
+                }
+            }
+        }
+        
+        // --- PERSISTENCE (Firestore) ---
+        async function loadUserData(user) {
+            const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
+            unsubscribeUser = onSnapshot(userRef, (docSnap) => {
+                if (docSnap.exists()) {
+                    userData = docSnap.data();
+
+                    if (!userData.setupComplete) {
+                        document.getElementById('setup-display-name').value = userData.displayName;
+                        document.getElementById('first-time-setup-modal').style.display = 'flex';
+                    } else {
+                        document.getElementById('login-view').classList.add('hidden');
+                        document.getElementById('app-view').classList.remove('hidden');
+                        document.getElementById('first-time-setup-modal').style.display = 'none';
+                        updateUI();
+                    }
+                } else {
+                    document.getElementById('first-time-setup-modal').style.display = 'flex';
+                }
+            });
+        }
+
+        async function handleFirstTimeSetup(e) {
+            e.preventDefault();
+            const displayName = document.getElementById('setup-display-name').value;
+            if (!displayName.trim()) {
+                alert("Please enter a display name.");
+                return;
+            }
+            
+            try {
+                userData.displayName = displayName;
+                userData.profilePicUrl = `https://placehold.co/128x128/01040a/00ffff?text=${displayName.charAt(0).toUpperCase()}`;
+                userData.setupComplete = true; 
+                await saveUserData();
+            } catch (error) {
+                alert(`Setup failed: ${error.message}`);
+            }
+        }
+
+        async function createInitialUserData(user, username) {
+            const today = new Date().toDateString();
+            const newUserData = {
+                uid: user.uid,
+                displayName: username,
+                username: username,
+                email: user.email,
+                profilePicUrl: "",
+                setupComplete: false,
+                createdAt: new Date().toISOString(),
+                level: 1, xp: 0, coins: 50, sp: 5, monthlyXP: 0,
+                tasks: [], purchasedItems: [], todayXP: 0, achievements: MOCK_ACHIEVEMENTS,
+                studyPassProgress: { claimedTiers: [] },
+                lastLoginDate: today,
+                lastQuoteDate: today
+            };
+            const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
+            await setDoc(userRef, newUserData);
+            const usernameRef = doc(db, `usernames/${username}`);
+            await setDoc(usernameRef, { email: user.email, uid: user.uid });
+            await updatePublicProfile(newUserData); 
+        }
+
+        async function saveUserData() {
+            if (!auth.currentUser || !userData) return;
+            const userRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
+            await setDoc(userRef, userData, { merge: true });
+            await updatePublicProfile(userData);
+        }
+        
+        async function updatePublicProfile(data) {
+             if (!data.uid) return;
+             const publicRef = doc(db, `artifacts/${appId}/public/data/leaderboard/${data.uid}`);
+             const publicData = {
+                displayName: data.displayName,
+                profilePicUrl: data.profilePicUrl,
+                monthlyXP: data.monthlyXP,
+                level: data.level,
+                uid: data.uid,
+             };
+             await setDoc(publicRef, publicData, { merge: true });
+        }
+        
+        // --- DATA HANDLING ---
+        function addTask(title, duration, subject) {
+            const hours = parseFloat(duration); if (isNaN(hours) || hours <= 0) return;
+            let xp = (hours === 1) ? 30 : 30 + (hours - 1) * 20;
+            const coins = Math.ceil(xp / 2);
+            const sp = Math.ceil(xp / 10);
+            userData.tasks.push({ id: `task_${Date.now()}`, title, duration: hours, subject, xp, coins, sp, completed: false });
+            saveUserData();
+        }
+
+        function completeTask(taskId) {
+            const task = userData.tasks.find(t => t.id === taskId);
+            if (!task || task.completed) return;
+            task.completed = true;
+            userData.coins += task.coins;
+            userData.sp += task.sp;
+            userData.monthlyXP += task.xp;
+            userData.todayXP += task.xp;
+            
+            const xpForNextLevel = userData.level * 100;
+            if (userData.xp + task.xp >= xpForNextLevel) {
+                userData.level++;
+                userData.xp = (userData.xp + task.xp) - xpForNextLevel;
+                checkAchievements('level_5');
+            } else {
+                userData.xp += task.xp;
+            }
+
+            checkAchievements('first_mission');
+            if (userData.tasks.filter(t => t.completed).length >= 10) {
+                 checkAchievements('task_master');
+            }
+
+            saveUserData();
+        }
+        
+        function checkAchievements(achievementId) {
+            const achievement = userData.achievements.find(a => a.id === achievementId);
+            if (achievement && !achievement.achieved) {
+                achievement.achieved = true;
+                alert(`Achievement Unlocked: ${achievement.name}!`);
+            }
+        }
+
+        function claimStudyPassReward(tierIndex) {
+            if (!userData) return;
+            const tier = STUDY_PASS_REWARDS[tierIndex];
+            if (!tier) return;
+            if (userData.monthlyXP < tier.xp) {
+                alert("You haven't reached this tier yet!");
+                return;
+            }
+            if (userData.studyPassProgress.claimedTiers.includes(tierIndex)) {
+                alert("You've already claimed this reward!");
+                return;
+            }
+
+            if (tier.coins) userData.coins += tier.coins;
+            if (tier.sp) userData.sp += tier.sp;
+            if (tier.title) alert(`New Title Unlocked: ${tier.title}!`);
+
+            userData.studyPassProgress.claimedTiers.push(tierIndex);
+            saveUserData();
+            alert(`Reward claimed for Tier ${tierIndex + 1}!`);
+        }
+
+        function purchaseShopItem(itemId) {
+            const item = SHOP_ITEMS.find(i => i.id === itemId);
+            if (!item) return;
+
+            if (item.currency === 'coins' && userData.coins < item.cost) {
+                alert("Not enough coins!"); return;
+            }
+            if (item.currency === 'sp' && userData.sp < item.cost) {
+                alert("Not enough Study Points!"); return;
+            }
+
+            if (item.currency === 'coins') userData.coins -= item.cost;
+            if (item.currency === 'sp') userData.sp -= item.cost;
+
+            alert(`Purchased ${item.name}!`);
+            saveUserData();
+        }
+
+
+        // --- UI RENDERING ---
+        function updateUI() {
+            if (!userData) return;
+            const currentLeague = LEAGUES.slice().reverse().find(l => userData.monthlyXP >= l.minXP) || LEAGUES[0];
+            const pfpUrl = userData.profilePicUrl || `https://placehold.co/128x128/01040a/00ffff?text=${userData.displayName ? userData.displayName.charAt(0).toUpperCase() : '?'}`;
+
+            document.getElementById('header-user-name').textContent = userData.displayName || 'Operative';
+            document.getElementById('dashboard-profile-name').textContent = userData.displayName || 'Operative';
+            document.getElementById('header-user-coins').textContent = userData.coins;
+            document.getElementById('header-user-sp').textContent = userData.sp;
+            document.getElementById('header-user-level').textContent = `LVL ${userData.level}`;
+            document.getElementById('dashboard-total-xp').textContent = userData.xp;
+            document.getElementById('dashboard-today-xp').textContent = userData.todayXP;
+
+            const xpForNextLevel = userData.level * 100;
+            const percentage = xpForNextLevel > 0 ? (userData.xp / xpForNextLevel) * 100 : 0;
+            document.getElementById('header-xp-bar').style.width = `${Math.min(100, percentage)}%`;
+
+            ['header-profile-pic', 'dashboard-profile-pic', 'profile-pic'].forEach(id => document.getElementById(id).src = pfpUrl);
+            
+            document.getElementById('dashboard-profile-league').innerHTML = `<i class="fas ${currentLeague.icon} mr-2 ${currentLeague.color}"></i> ${currentLeague.name}`;
+            document.getElementById('member-since').textContent = new Date(userData.createdAt).toLocaleDateString();
+            document.getElementById('profile-name-input').value = userData.displayName;
+
+            renderTasks();
+            renderLeaderboard();
+            renderShop();
+            renderStudyPass();
+            renderAchievements();
+            updateDailyQuote();
+        }
+        
+        function renderTasks() {
+            const container = document.getElementById('daily-tasks-container');
+            if (!container || !userData.tasks) return;
+            container.innerHTML = userData.tasks.length === 0 ? `<div class="text-center text-gray-400 p-8 cyber-card rounded-lg">No missions for today. Add one!</div>` : '';
+            userData.tasks.forEach(task => {
+                const el = document.createElement('div');
+                el.className = `cyber-card p-4 rounded-lg flex items-center justify-between transition-all duration-300 ${task.completed ? 'opacity-40' : 'hover:border-cyan-400'}`;
+                el.innerHTML = `
+                    <div>
+                        <h4 class="font-bold text-lg text-white">${task.title}</h4>
+                        <div class="flex items-center gap-2 mt-1">
+                            <span class="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full">${task.subject}</span>
+                            <span class="text-sm text-gray-400">${task.duration}hr mission</span>
+                        </div>
+                    </div>
+                    <div class="text-right font-orbitron">
+                        <p class="font-semibold text-cyan-300">+${task.xp} XP</p>
+                        <p class="font-semibold text-yellow-400">+${task.coins} C / <span class="text-purple-400">+${task.sp} SP</span></p>
+                    </div>
+                    <button class="task-complete-btn ml-6 cyber-button text-white font-bold py-2 px-4 rounded-lg ${task.completed ? 'bg-gray-600/50 border-gray-500' : 'bg-green-500/20 border-green-400'}" data-task-id="${task.id}" ${task.completed ? 'disabled' : ''}>
+                        ${task.completed ? '<i class="fas fa-check"></i>' : 'Complete'}
+                    </button>`;
+                container.appendChild(el);
+            });
+             document.querySelectorAll('.task-complete-btn').forEach(btn => btn.addEventListener('click', (e) => completeTask(e.currentTarget.dataset.taskId)));
+        }
+
+        async function renderLeaderboard() {
+            const container = document.getElementById('leaderboard-body');
+            if(!container) return;
+            
+            const leaderboardCol = collection(db, `artifacts/${appId}/public/data/leaderboard`);
+            const snapshot = await getDocs(leaderboardCol);
+            const usersFromDB = snapshot.docs.map(doc => doc.data());
+
+            if (auth.currentUser && userData && !usersFromDB.some(u => u.uid === auth.currentUser.uid)) {
+                usersFromDB.push({
+                    displayName: userData.displayName, profilePicUrl: userData.profilePicUrl,
+                    monthlyXP: userData.monthlyXP, level: userData.level, uid: userData.uid
+                });
+            }
+
+            const allPlayers = [...usersFromDB, ...botsData];
+            allPlayers.sort((a, b) => b.monthlyXP - a.monthlyXP);
+
+            container.innerHTML = '';
+            allPlayers.forEach((player, index) => {
+                const row = document.createElement('tr');
+                row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20 text-white' : ''}`;
+                row.innerHTML = `
+                    <td class="p-4 font-bold text-lg font-orbitron">${index + 1}</td>
+                    <td class="p-4"><img src="${player.profilePicUrl}" class="w-10 h-10 rounded-full object-cover"></td>
+                    <td class="p-4 font-semibold">${player.displayName || player.name}</td>
+                    <td class="p-4 text-cyan-300 font-orbitron">${player.monthlyXP}</td>
+                    <td class="p-4 font-orbitron">${player.level}</td>`;
+                container.appendChild(row);
+            });
+        }
+        
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            if (!container) return;
+            container.innerHTML = '';
+            SHOP_ITEMS.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'cyber-card p-6 rounded-lg text-center';
+                itemEl.innerHTML = `
+                    <i class="fas ${item.icon} text-5xl text-yellow-400 mb-4"></i>
+                    <h3 class="font-bold text-xl text-white">${item.name}</h3>
+                    <p class="text-gray-400 mb-4">${item.description}</p>
+                    <button class="cyber-button purchase-item-btn bg-purple-500/20 text-purple-300 font-bold py-2 px-4 rounded-lg" data-item-id="${item.id}">
+                        <i class="fas ${item.currency === 'sp' ? 'fa-database' : 'fa-coins'} mr-2"></i>${item.cost} ${item.currency.toUpperCase()}
+                    </button>
+                `;
+                container.appendChild(itemEl);
+            });
+            document.querySelectorAll('.purchase-item-btn').forEach(btn => btn.addEventListener('click', (e) => purchaseShopItem(e.currentTarget.dataset.itemId)));
+        }
+
+        function renderStudyPass() {
+            const container = document.getElementById('study-pass-container');
+            if (!container || !userData) return;
+            container.innerHTML = ''; 
+
+            const totalXPNeeded = STUDY_PASS_REWARDS[STUDY_PASS_REWARDS.length - 1].xp;
+            const currentPassXP = userData.monthlyXP;
+            const passPercentage = totalXPNeeded > 0 ? (currentPassXP / totalXPNeeded) * 100 : 0;
+            document.getElementById('pass-progress-bar').style.width = `${Math.min(100, passPercentage)}%`;
+            document.getElementById('pass-progress-bar').textContent = `${Math.min(totalXPNeeded, currentPassXP)} / ${totalXPNeeded} XP`;
+
+
+            STUDY_PASS_REWARDS.forEach((tier, index) => {
+                const isClaimed = userData.studyPassProgress.claimedTiers.includes(index);
+                const isUnlocked = userData.monthlyXP >= tier.xp;
+                const tierEl = document.createElement('div');
+                tierEl.className = `cyber-card p-4 rounded-lg text-center ${!isUnlocked ? 'opacity-50 grayscale' : ''}`;
+                tierEl.innerHTML = `
+                    <h4 class="font-bold text-xl text-white">Tier ${index + 1}</h4>
+                    <p class="text-gray-400">Requires: ${tier.xp} XP</p>
+                    ${tier.coins ? `<p class="text-yellow-300">${tier.coins} Coins</p>` : ''}
+                    ${tier.sp ? `<p class="text-purple-300">${tier.sp} SP</p>` : ''}
+                    ${tier.title ? `<p class="text-cyan-300">Title: ${tier.title}</p>` : ''}
+                    <button class="cyber-button claim-pass-btn mt-2 py-1 px-3 rounded-lg 
+                        ${isClaimed ? 'bg-gray-600/50 text-gray-300' : 'bg-green-500/20 text-green-300'}
+                        " data-tier-index="${index}" ${!isUnlocked || isClaimed ? 'disabled' : ''}>
+                        ${isClaimed ? 'Claimed <i class="fas fa-check"></i>' : (isUnlocked ? 'Claim Reward' : 'Locked <i class="fas fa-lock"></i>')}
+                    </button>
+                `;
+                container.appendChild(tierEl);
+            });
+             document.querySelectorAll('.claim-pass-btn').forEach(btn => btn.addEventListener('click', (e) => claimStudyPassReward(parseInt(e.currentTarget.dataset.tierIndex))));
+        }
+
+        function renderAchievements() {
+            const container = document.getElementById('achievements-container');
+            if (!container || !userData.achievements) return;
+            container.innerHTML = '';
+
+            userData.achievements.forEach(achievement => {
+                const achEl = document.createElement('div');
+                achEl.className = `cyber-card p-4 rounded-lg text-center ${!achievement.achieved ? 'opacity-50 grayscale' : ''}`;
+                achEl.innerHTML = `
+                    <i class="fas ${achievement.icon} text-4xl text-cyan-400 mb-2"></i>
+                    <h4 class="font-bold text-lg text-white">${achievement.name}</h4>
+                    <p class="text-gray-400 text-sm">${achievement.description}</p>
+                    ${achievement.achieved ? '<span class="text-green-400 font-bold mt-2 block">Achieved!</span>' : ''}
+                `;
+                container.appendChild(achEl);
+            });
+        }
+
+        function updateDailyQuote() {
+            const today = new Date().toDateString();
+            if (userData && userData.lastQuoteDate === today && userData.currentQuoteText) {
+                document.getElementById('quote-text').textContent = userData.currentQuoteText;
+                document.getElementById('quote-author').textContent = userData.currentQuoteAuthor;
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * QUOTES.length);
+            const quote = QUOTES[randomIndex];
+            document.getElementById('quote-text').textContent = quote.text;
+            document.getElementById('quote-author').textContent = `- ${quote.author}`;
+            
+            if(userData) {
+                userData.currentQuoteText = quote.text;
+                userData.currentQuoteAuthor = quote.author;
+                userData.lastQuoteDate = today;
+                if (auth.currentUser) saveUserData();
+            }
+        }
+
+
+        // --- EVENT LISTENERS ---
+        function setupEventListeners() {
+            // Auth
+            document.getElementById('auth-form').addEventListener('submit', handleAuthFormSubmit);
+            document.getElementById('sign-out-btn').addEventListener('click', signOutUser);
+            document.getElementById('first-time-setup-form').addEventListener('submit', handleFirstTimeSetup);
+            
+            document.getElementById('auth-toggle-text').addEventListener('click', () => {
+                isLoginMode = !isLoginMode;
+                document.getElementById('email-input').classList.toggle('hidden', isLoginMode);
+                document.getElementById('auth-title').textContent = isLoginMode ? 'Login' : 'Create Account';
+                document.getElementById('auth-submit-btn').textContent = isLoginMode ? 'Sign In' : 'Create Account';
+                document.getElementById('auth-toggle-text').textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Sign In";
+            });
+
+            // Navigation
+            document.querySelectorAll('.nav-link').forEach(link => {
+                link.addEventListener('click', e => {
+                    e.preventDefault();
+                    const targetId = e.currentTarget.getAttribute('href').substring(1);
+                    document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
+                    document.getElementById(targetId).classList.remove('hidden');
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('p-3', 'bg-cyan-500/20', 'rounded-lg'));
+                    e.currentTarget.classList.add('p-3', 'bg-cyan-500/20', 'rounded-lg');
+                    document.getElementById('page-title').textContent = e.currentTarget.querySelector('.tooltip').textContent;
+                    
+                    if (targetId === 'leaderboard') renderLeaderboard();
+                    if (targetId === 'profile') renderAchievements(); 
+                    if (targetId === 'pass') renderStudyPass();
+                    if (targetId === 'shop') renderShop();
+                });
+            });
+
+            // Add Task
+            document.getElementById('add-task-btn').addEventListener('click', () => document.getElementById('add-task-modal').style.display = 'flex');
+            document.getElementById('cancel-add-task-btn').addEventListener('click', () => document.getElementById('add-task-modal').style.display = 'none');
+            
+            const subjectSelect = document.getElementById('task-subject');
+            const otherSubjectContainer = document.getElementById('other-subject-container');
+            subjectSelect.addEventListener('change', () => {
+                otherSubjectContainer.classList.toggle('hidden', subjectSelect.value !== 'other');
+            });
+            
+            document.getElementById('add-task-form').addEventListener('submit', (e) => {
+                e.preventDefault();
+                const title = document.getElementById('task-title').value;
+                const duration = document.getElementById('task-duration').value;
+                let subject = subjectSelect.value;
+                if (subject === 'other') { subject = document.getElementById('task-subject-other').value || 'Other'; }
+                addTask(title, duration, subject);
+                document.getElementById('add-task-modal').style.display = 'none';
+                e.target.reset();
+                otherSubjectContainer.classList.add('hidden');
+            });
+            
+            // Update Profile Name
+            document.getElementById('update-profile-btn').addEventListener('click', async () => {
+                const newName = document.getElementById('profile-name-input').value;
+                if (newName && newName.trim() && newName !== userData.displayName) {
+                    userData.displayName = newName;
+                    await saveUserData();
+                    alert('Profile name updated!');
+                }
+            });
+        }
+    </script>
+</body>
+</html>
