@@ -161,13 +161,11 @@
                 <div id="profile" class="page hidden">
                      <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Operative Profile</h2>
                     <div class="cyber-card p-8 rounded-lg flex items-center space-x-8">
-                        <div class="relative group">
-                            <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
-                        </div>
+                        <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
                         <div>
                             <input id="profile-name-input" class="bg-gray-900/50 text-4xl font-bold text-white p-2 rounded-lg border border-cyan-300/30 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-orbitron" value="User">
                             <button id="update-profile-btn" class="cyber-button bg-green-500/20 border-green-400 text-green-300 font-bold py-2 px-4 rounded-lg ml-4">Save Changes</button>
-                             <button id="sign-out-btn" class="cyber-button bg-red-500/20 border-red-400 text-red-300 font-bold py-2 px-4 rounded-lg ml-2">Sign Out</button>
+                            <button id="sign-out-btn" class="cyber-button bg-red-500/20 border-red-400 text-red-300 font-bold py-2 px-4 rounded-lg ml-2">Sign Out</button>
                             <p class="text-gray-400 mt-2">Member since: <span id="member-since"></span></p>
                         </div>
                     </div>
@@ -323,7 +321,11 @@
                 await signInWithPopup(auth, provider);
             } catch (error) {
                 console.error("Google Sign-In failed:", error);
-                alert("Failed to sign in with Google: " + error.message);
+                 if (error.code === 'auth/unauthorized-domain') {
+                    alert("Google Sign-In failed! \n\nError: Unauthorized Domain. \n\nThis is a Firebase configuration issue, not a code bug. To fix it, you MUST add the following domain to your Firebase project's allowlist:\n\n1. Go to Firebase Console -> Build -> Authentication -> Settings tab.\n2. Under 'Authorized domains', click 'Add domain'.\n3. Enter this exact domain: scf.usercontent.goog");
+                } else {
+                    alert("Failed to sign in with Google: " + error.message);
+                }
             }
         }
         
@@ -598,7 +600,7 @@
 
         function renderStudyPass() {
             const container = document.getElementById('study-pass-container');
-            if (!container) return;
+            if (!container || !userData) return;
             container.innerHTML = ''; 
 
             const totalXPNeeded = STUDY_PASS_REWARDS[STUDY_PASS_REWARDS.length - 1].xp;
@@ -650,7 +652,7 @@
 
         function updateDailyQuote() {
             const today = new Date().toDateString();
-            if (userData.lastQuoteDate === today && userData.currentQuoteText) {
+            if (userData && userData.lastQuoteDate === today && userData.currentQuoteText) {
                 document.getElementById('quote-text').textContent = userData.currentQuoteText;
                 document.getElementById('quote-author').textContent = userData.currentQuoteAuthor;
                 return;
@@ -661,10 +663,12 @@
             document.getElementById('quote-text').textContent = quote.text;
             document.getElementById('quote-author').textContent = `- ${quote.author}`;
             
-            userData.currentQuoteText = quote.text;
-            userData.currentQuoteAuthor = quote.author;
-            userData.lastQuoteDate = today;
-            if (auth.currentUser) saveUserData();
+            if(userData) {
+                userData.currentQuoteText = quote.text;
+                userData.currentQuoteAuthor = quote.author;
+                userData.lastQuoteDate = today;
+                if (auth.currentUser) saveUserData();
+            }
         }
 
 
@@ -710,16 +714,6 @@
                 document.getElementById('add-task-modal').style.display = 'none';
                 e.target.reset();
                 otherSubjectContainer.classList.add('hidden');
-            });
-
-            const avatarUploadInput = document.getElementById('avatar-upload-input');
-            document.querySelectorAll('.profile-avatar-upload').forEach(el => el.addEventListener('click', () => avatarUploadInput.click()));
-
-            avatarUploadInput.addEventListener('change', (event) => {
-                const file = event.target.files[0];
-                if (file) {
-                    uploadAvatar(file);
-                }
             });
             
             document.getElementById('update-profile-btn').addEventListener('click', async () => {
