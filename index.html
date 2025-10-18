@@ -59,11 +59,12 @@
         }
         .main-content-area {
              overflow-y: auto;
-             height: calc(100vh - 73px); /* Full height minus header */
+             height: calc(100vh - 73px);
         }
         .main-content-area::-webkit-scrollbar { width: 8px; }
         .main-content-area::-webkit-scrollbar-track { background: transparent; }
         .main-content-area::-webkit-scrollbar-thumb { background-color: rgba(0, 255, 255, 0.3); border-radius: 4px; border: 1px solid rgba(0, 255, 255, 0.5); }
+        .profile-avatar-upload { cursor: pointer; }
     </style>
 </head>
 <body class="text-gray-200 antialiased">
@@ -74,13 +75,22 @@
     </div>
     
     <!-- Login View --><div id="login-view" class="h-screen w-full flex items-center justify-center">
-        <div class="text-center">
-            <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-48 mx-auto mb-6">
-            <h1 class="text-6xl font-bold text-white text-glow font-orbitron mb-4">StudyYPT</h1>
-            <p id="login-status" class="text-xl text-cyan-300 mb-8">Ready for launch...</p>
-            <button id="google-sign-in-btn" class="cyber-button bg-blue-600/50 hover:bg-blue-600/70 text-white font-bold py-3 px-8 rounded-lg text-xl flex items-center justify-center mx-auto transition duration-300">
-                <i class="fab fa-google mr-3"></i> Sign In with Google
+        <div class="cyber-card p-8 rounded-lg w-full max-w-md">
+            <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-24 mx-auto mb-4">
+            <h1 id="auth-title" class="text-3xl font-bold text-white text-glow font-orbitron mb-6 text-center">Login</h1>
+            
+            <form id="email-login-form" class="space-y-4">
+                <input type="email" id="email-input" placeholder="Email" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                <input type="password" id="password-input" placeholder="Password" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                <button type="submit" id="auth-submit-btn" class="cyber-button w-full bg-cyan-500/20 text-cyan-300 font-bold py-2 px-6 rounded-lg">Sign In</button>
+            </form>
+            
+            <div class="my-4 text-center text-gray-400">or</div>
+
+            <button id="google-sign-in-btn" class="cyber-button w-full bg-blue-600/50 hover:bg-blue-600/70 text-white font-bold py-2 px-8 rounded-lg flex items-center justify-center mx-auto transition duration-300">
+                <i class="fab fa-google mr-3"></i> Continue with Google
             </button>
+            <p id="auth-toggle-text" class="text-center mt-6 text-cyan-300 cursor-pointer">Don't have an account? Create one</p>
         </div>
     </div>
 
@@ -161,7 +171,12 @@
                 <div id="profile" class="page hidden">
                      <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Operative Profile</h2>
                     <div class="cyber-card p-8 rounded-lg flex items-center space-x-8">
-                        <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
+                        <div class="relative group profile-avatar-upload">
+                            <img id="profile-pic" src="https://placehold.co/128x128/01040a/00ffff?text=A" class="w-32 h-32 rounded-full border-4 border-cyan-400 object-cover">
+                            <div class="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full">
+                                <i class="fas fa-camera text-3xl"></i>
+                            </div>
+                        </div>
                         <div>
                             <input id="profile-name-input" class="bg-gray-900/50 text-4xl font-bold text-white p-2 rounded-lg border border-cyan-300/30 focus:outline-none focus:ring-2 focus:ring-cyan-500 font-orbitron" value="User">
                             <button id="update-profile-btn" class="cyber-button bg-green-500/20 border-green-400 text-green-300 font-bold py-2 px-4 rounded-lg ml-4">Save Changes</button>
@@ -189,7 +204,25 @@
         </div>
     </div>
 
-    <!-- Modals --><div id="add-task-modal" class="modal items-center justify-center">
+    <!-- Modals -->
+    <div id="first-time-setup-modal" class="modal items-center justify-center">
+        <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-md mx-auto modal-content">
+            <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Welcome, Operative!</h2>
+            <p class="text-gray-400 mb-6">Let's set up your profile.</p>
+            <form id="first-time-setup-form" class="space-y-4">
+                 <img id="setup-avatar-preview" src="https://placehold.co/128x128/01040a/00ffff?text=?" class="w-32 h-32 rounded-full mx-auto border-4 border-cyan-400/50 mb-4 object-cover profile-avatar-upload">
+                 <div>
+                    <label for="setup-display-name" class="block text-sm font-medium text-cyan-300 mb-1">Choose your Display Name</label>
+                    <input type="text" id="setup-display-name" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
+                </div>
+                <div class="flex justify-center pt-4">
+                    <button type="submit" class="cyber-button bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 font-bold py-2 px-6 rounded-lg">Complete Setup</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div id="add-task-modal" class="modal items-center justify-center">
         <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-md mx-auto modal-content">
             <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Add New Mission</h2>
             <form id="add-task-form" class="space-y-4">
@@ -223,12 +256,16 @@
             </form>
         </div>
     </div>
+    
+    <input type="file" id="avatar-upload-input" class="hidden" accept="image/*">
+
 
     <script type="module">
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+        import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
         
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -241,9 +278,9 @@
           measurementId: "G-8L0G02Q5WE"
         };
         
-        const appId = "studyypt-1fa01"; // Using projectId as a simpler unique ID
+        const appId = "studyypt-1fa01";
 
-        // --- DUMMY DATA & CONSTANTS ---
+        // --- CONSTANTS ---
         const QUOTES = [ { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" }, { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" }, { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill"} ];
         const LEAGUES = [
             { name: "Bronze", minXP: 0, icon: "fa-solid fa-medal", color: "text-orange-400" }, 
@@ -272,30 +309,30 @@
             { xp: 15000, coins: 400, sp: 80, title: "Grandmaster" },
             { xp: 20000, coins: 500, sp: 100, title: "Legendary" }
         ];
-
-
-        // --- FIREBASE & STATE ---
-        let app, auth, db;
-        let userData;
         let botsData = [
             { name: 'Cipher', level: 15, monthlyXP: 12540, profilePicUrl: 'https://placehold.co/40x40/9333ea/ffffff?text=C' }, 
             { name: 'Glitch', level: 12, monthlyXP: 9870, profilePicUrl: 'https://placehold.co/40x40/be123c/ffffff?text=G' },
             { name: 'Byte', level: 10, monthlyXP: 7500, profilePicUrl: 'https://placehold.co/40x40/16a34a/ffffff?text=B' }, 
             { name: 'Vector', level: 8, monthlyXP: 5200, profilePicUrl: 'https://placehold.co/40x40/ca8a04/ffffff?text=V' }
         ];
+
+        // --- FIREBASE & STATE ---
+        let app, auth, db, storage;
+        let userData;
+        let isLoginMode = true;
         let unsubscribeUser; 
-        
+        let selectedAvatarFile = null;
+
         // --- INITIALIZATION ---
         window.onload = () => {
              if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
+                storage = getStorage(app);
                 setupAuthObserver();
             } else {
-                document.getElementById('login-status').textContent = 'Please configure Firebase API keys in the script.';
-                document.getElementById('google-sign-in-btn').style.display = 'none';
-                console.error("Firebase config not found or invalid.");
+                document.getElementById('login-view').innerHTML = '<p class="text-red-500 text-center">Firebase config is missing or invalid. Please check the script.</p>';
             }
             setupEventListeners();
         };
@@ -304,17 +341,17 @@
             onAuthStateChanged(auth, async user => {
                 if (unsubscribeUser) unsubscribeUser(); 
                 if (user) {
-                    document.getElementById('login-view').classList.add('hidden');
-                    document.getElementById('app-view').classList.remove('hidden');
                     await loadUserData(user);
                 } else {
                     document.getElementById('login-view').classList.remove('hidden');
                     document.getElementById('app-view').classList.add('hidden');
+                    document.getElementById('first-time-setup-modal').style.display = 'none';
                     userData = null;
                 }
             });
         }
         
+        // --- AUTH FUNCTIONS ---
         async function signInWithGoogle() {
             const provider = new GoogleAuthProvider();
             try {
@@ -339,37 +376,64 @@
             }
         }
 
+        async function handleAuthFormSubmit(e) {
+            e.preventDefault();
+            const email = document.getElementById('email-input').value;
+            const password = document.getElementById('password-input').value;
+            try {
+                if (isLoginMode) {
+                    await signInWithEmailAndPassword(auth, email, password);
+                } else {
+                    await createUserWithEmailAndPassword(auth, email, password);
+                }
+            } catch (error) {
+                alert(`Authentication failed: ${error.message}`);
+            }
+        }
+        
         // --- PERSISTENCE (Firestore) ---
         async function loadUserData(user) {
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
-            unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
+            unsubscribeUser = onSnapshot(userRef, (docSnap) => {
                 if (docSnap.exists()) {
                     userData = docSnap.data();
-                    const today = new Date().toDateString();
-                    if (!userData.lastLoginDate || new Date(userData.lastLoginDate).toDateString() !== today) {
-                        userData.todayXP = 0;
-                        userData.lastLoginDate = today;
-                        await saveUserData(); 
-                    }
-                     if (!userData.lastQuoteDate || new Date(userData.lastQuoteDate).toDateString() !== today) {
-                        updateDailyQuote();
-                        userData.lastQuoteDate = today;
-                        await saveUserData(); 
-                    }
+                    document.getElementById('login-view').classList.add('hidden');
+                    document.getElementById('app-view').classList.remove('hidden');
+                    document.getElementById('first-time-setup-modal').style.display = 'none';
+                    updateUI();
                 } else {
-                    await createInitialUserData(user);
+                    document.getElementById('first-time-setup-modal').style.display = 'flex';
                 }
-                updateUI();
             });
         }
 
-        async function createInitialUserData(user) {
+        async function handleFirstTimeSetup(e) {
+            e.preventDefault();
+            const displayName = document.getElementById('setup-display-name').value;
+            if (!displayName.trim()) {
+                alert("Please enter a display name.");
+                return;
+            }
+            if (!selectedAvatarFile) {
+                alert("Please select a profile avatar.");
+                return;
+            }
+            
+            try {
+                const avatarUrl = await uploadAvatar(selectedAvatarFile);
+                await createInitialUserData(auth.currentUser, displayName, avatarUrl);
+            } catch (error) {
+                alert(`Setup failed: ${error.message}`);
+            }
+        }
+
+        async function createInitialUserData(user, displayName, profilePicUrl) {
             const today = new Date().toDateString();
             const newUserData = {
                 uid: user.uid,
-                displayName: user.displayName || 'Operative',
+                displayName: displayName,
                 email: user.email,
-                profilePicUrl: user.photoURL || `https://placehold.co/128x128/01040a/00ffff?text=${user.displayName ? user.displayName.charAt(0) : 'U'}`,
+                profilePicUrl: profilePicUrl,
                 createdAt: new Date().toISOString(),
                 level: 1, xp: 0, coins: 50, sp: 5, monthlyXP: 0,
                 tasks: [], purchasedItems: [], todayXP: 0, achievements: MOCK_ACHIEVEMENTS,
@@ -380,7 +444,7 @@
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             await setDoc(userRef, newUserData);
             await updatePublicProfile(newUserData); 
-            userData = newUserData;
+            // The onSnapshot listener will handle the UI update
         }
 
         async function saveUserData() {
@@ -389,7 +453,7 @@
             await setDoc(userRef, userData, { merge: true });
             await updatePublicProfile(userData);
         }
-
+        
         async function updatePublicProfile(data) {
              if (!data.uid) return;
              const publicRef = doc(db, `artifacts/${appId}/public/data/leaderboard/${data.uid}`);
@@ -437,6 +501,13 @@
             }
 
             saveUserData();
+        }
+
+        async function uploadAvatar(file) {
+            if (!auth.currentUser || !file) throw new Error("No user or file to upload.");
+            const storageRef = ref(storage, `artifacts/${appId}/users/${auth.currentUser.uid}/profile.jpg`);
+            const snapshot = await uploadBytes(storageRef, file);
+            return await getDownloadURL(snapshot.ref);
         }
         
         function checkAchievements(achievementId) {
@@ -492,7 +563,7 @@
         function updateUI() {
             if (!userData) return;
             const currentLeague = LEAGUES.slice().reverse().find(l => userData.monthlyXP >= l.minXP) || LEAGUES[0];
-            const pfpUrl = userData.profilePicUrl;
+            const pfpUrl = userData.profilePicUrl || 'https://placehold.co/128x128/01040a/00ffff?text=?';
 
             document.getElementById('header-user-name').textContent = userData.displayName || 'Operative';
             document.getElementById('dashboard-profile-name').textContent = userData.displayName || 'Operative';
@@ -503,7 +574,7 @@
             document.getElementById('dashboard-today-xp').textContent = userData.todayXP;
 
             const xpForNextLevel = userData.level * 100;
-            const percentage = (userData.xp / xpForNextLevel) * 100;
+            const percentage = xpForNextLevel > 0 ? (userData.xp / xpForNextLevel) * 100 : 0;
             document.getElementById('header-xp-bar').style.width = `${Math.min(100, percentage)}%`;
 
             ['header-profile-pic', 'dashboard-profile-pic', 'profile-pic'].forEach(id => document.getElementById(id).src = pfpUrl);
@@ -517,6 +588,7 @@
             renderShop();
             renderStudyPass();
             renderAchievements();
+            updateDailyQuote();
         }
         
         function renderTasks() {
@@ -554,7 +626,7 @@
             const snapshot = await getDocs(leaderboardCol);
             const usersFromDB = snapshot.docs.map(doc => doc.data());
 
-            if (auth.currentUser && !usersFromDB.some(u => u.uid === auth.currentUser.uid)) {
+            if (auth.currentUser && userData && !usersFromDB.some(u => u.uid === auth.currentUser.uid)) {
                 usersFromDB.push({
                     displayName: userData.displayName, profilePicUrl: userData.profilePicUrl,
                     monthlyXP: userData.monthlyXP, level: userData.level, uid: userData.uid
@@ -674,10 +746,43 @@
 
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
+            // Auth
             document.getElementById('google-sign-in-btn').addEventListener('click', signInWithGoogle);
             document.getElementById('sign-out-btn').addEventListener('click', signOutUser);
+            document.getElementById('email-login-form').addEventListener('submit', handleAuthFormSubmit);
+            document.getElementById('first-time-setup-form').addEventListener('submit', handleFirstTimeSetup);
+            
+            document.getElementById('auth-toggle-text').addEventListener('click', () => {
+                isLoginMode = !isLoginMode;
+                document.getElementById('auth-title').textContent = isLoginMode ? 'Login' : 'Create Account';
+                document.getElementById('auth-submit-btn').textContent = isLoginMode ? 'Sign In' : 'Create Account';
+                document.getElementById('auth-toggle-text').textContent = isLoginMode ? "Don't have an account? Create one" : "Already have an account? Sign In";
+            });
 
+            // Avatar Uploads
+            const avatarUploadInput = document.getElementById('avatar-upload-input');
+            document.querySelectorAll('.profile-avatar-upload').forEach(el => el.addEventListener('click', () => avatarUploadInput.click()));
+            
+            avatarUploadInput.addEventListener('change', async (event) => {
+                const file = event.target.files[0];
+                if (!file) return;
 
+                if (document.getElementById('first-time-setup-modal').style.display === 'flex') {
+                    selectedAvatarFile = file;
+                    document.getElementById('setup-avatar-preview').src = URL.createObjectURL(file);
+                } else if (userData) {
+                    try {
+                        const newAvatarUrl = await uploadAvatar(file);
+                        userData.profilePicUrl = newAvatarUrl;
+                        await saveUserData();
+                        alert("Avatar updated successfully!");
+                    } catch (error) {
+                        alert(`Avatar update failed: ${error.message}`);
+                    }
+                }
+            });
+
+            // Navigation
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', e => {
                     e.preventDefault();
@@ -695,6 +800,7 @@
                 });
             });
 
+            // Add Task
             document.getElementById('add-task-btn').addEventListener('click', () => document.getElementById('add-task-modal').style.display = 'flex');
             document.getElementById('cancel-add-task-btn').addEventListener('click', () => document.getElementById('add-task-modal').style.display = 'none');
             
@@ -716,9 +822,10 @@
                 otherSubjectContainer.classList.add('hidden');
             });
             
+            // Update Profile Name
             document.getElementById('update-profile-btn').addEventListener('click', async () => {
                 const newName = document.getElementById('profile-name-input').value;
-                if (newName && newName !== userData.displayName) {
+                if (newName && newName.trim() && newName !== userData.displayName) {
                     userData.displayName = newName;
                     await saveUserData();
                     alert('Profile name updated!');
@@ -728,5 +835,4 @@
     </script>
 </body>
 </html>
-
 
