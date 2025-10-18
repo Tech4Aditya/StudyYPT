@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Study Arena</title>
+    <title>StudyYPT</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700&family=Rajdhani:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -74,23 +74,21 @@
         <div class="clouds"></div>
     </div>
     
-    <!-- Login View -->
-    <div id="login-view" class="h-screen w-full flex items-center justify-center">
+    <!-- Login View --><div id="login-view" class="h-screen w-full flex items-center justify-center">
         <div class="text-center">
-            <h1 class="text-6xl font-bold text-white text-glow font-orbitron mb-4">Study Arena</h1>
-            <p class="text-xl text-cyan-300 mb-8">Log in to begin your mission.</p>
-            <button id="login-btn" class="cyber-button text-xl font-bold py-3 px-8 rounded-lg text-cyan-300 flex items-center gap-3 mx-auto">
-                <i class="fab fa-google"></i> Sign In with Google
+            <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-48 mx-auto mb-6">
+            <h1 class="text-6xl font-bold text-white text-glow font-orbitron mb-4">StudyYPT</h1>
+            <p id="login-status" class="text-xl text-cyan-300 mb-8">Ready for launch...</p>
+            <button id="google-sign-in-btn" class="cyber-button bg-blue-600/50 hover:bg-blue-600/70 text-white font-bold py-3 px-8 rounded-lg text-xl flex items-center justify-center mx-auto transition duration-300">
+                <i class="fab fa-google mr-3"></i> Sign In with Google
             </button>
         </div>
     </div>
 
-    <!-- Main App View -->
-    <div id="app-view" class="h-screen w-full flex bg-black/10 hidden">
-        <!-- Icon Sidebar -->
-        <nav class="w-20 bg-black/30 backdrop-blur-lg border-r border-cyan-300/20 p-4 flex flex-col items-center justify-between">
+    <!-- Main App View --><div id="app-view" class="h-screen w-full flex bg-black/10 hidden">
+        <!-- Icon Sidebar --><nav class="w-20 bg-black/30 backdrop-blur-lg border-r border-cyan-300/20 p-4 flex flex-col items-center justify-between">
             <div>
-                <div class="text-cyan-300 text-3xl mb-16 text-glow"><i class="fas fa-atom"></i></div>
+                <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-12 h-12 mb-16 rounded-full object-cover">
                 <ul class="space-y-8">
                     <li class="nav-item relative"><a href="#home" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition p-3 bg-cyan-500/20 rounded-lg"><i class="fas fa-compass w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Dashboard</span></a></li>
                     <li class="nav-item relative"><a href="#leaderboard" class="nav-link text-gray-400 hover:text-cyan-300 text-2xl transition"><i class="fas fa-trophy w-6 text-center"></i><span class="tooltip bg-gray-800 text-white text-sm px-3 py-1 rounded-md">Leaderboard</span></a></li>
@@ -102,10 +100,8 @@
             <div class="text-center text-xs text-cyan-300/50 font-semibold tracking-wider font-orbitron">Made with ❤️<br>by aditya</div>
         </nav>
         
-        <!-- Main Area -->
-        <div class="flex-1 flex flex-col">
-            <!-- Header -->
-            <header class="bg-black/10 backdrop-blur-lg border-b border-cyan-300/20 p-4 flex justify-between items-center z-10">
+        <!-- Main Area --><div class="flex-1 flex flex-col">
+            <!-- Header --><header class="bg-black/10 backdrop-blur-lg border-b border-cyan-300/20 p-4 flex justify-between items-center z-10">
                 <div><h2 id="page-title" class="text-3xl font-bold text-white text-glow font-orbitron">Dashboard</h2></div>
                 <div class="flex items-center space-x-4">
                     <div class="flex items-center space-x-2 bg-gray-900/50 px-3 py-1 rounded-full border border-gray-700"><i class="fas fa-database text-purple-400"></i><span id="header-user-sp" class="font-bold text-md font-orbitron">0</span></div>
@@ -121,8 +117,7 @@
                 </div>
             </header>
 
-            <!-- Main Content -->
-            <main class="main-content-area p-8">
+            <!-- Main Content --><main class="main-content-area p-8">
                 <div id="home" class="page">
                      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="lg:col-span-1 space-y-8">
@@ -190,18 +185,41 @@
                     <div class="w-full bg-black/50 rounded-full h-6 border border-cyan-300/30 mb-8 cyber-card p-1">
                         <div id="pass-progress-bar" class="bg-gradient-to-r from-purple-500 via-pink-500 to-red-500 h-full rounded-full flex items-center justify-center text-sm font-bold xp-bar-progress" style="width: 0%;"></div>
                     </div>
-                    <div id="study-pass-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4"></div>
+                    <div id="study-pass-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-5 gap-4">
+                         <div class="cyber-card p-4 rounded-lg text-center">
+                            <h4 class="font-bold text-xl text-white">Tier 1</h4>
+                            <p class="text-cyan-300">500 XP</p>
+                            <button class="cyber-button mt-2 bg-green-500/20 text-green-300 py-1 px-3 rounded-lg">Claim</button>
+                        </div>
+                         <div class="cyber-card p-4 rounded-lg text-center">
+                            <h4 class="font-bold text-xl text-white">Tier 2</h4>
+                            <p class="text-yellow-300">100 Coins</p>
+                            <button class="cyber-button mt-2 bg-green-500/20 text-green-300 py-1 px-3 rounded-lg">Claim</button>
+                        </div>
+                    </div>
                 </div>
                 <div id="shop" class="page hidden">
                      <h2 class="text-4xl font-bold text-white mb-6 font-orbitron">Supply Depot</h2>
-                    <div id="shop-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"></div>
+                    <div id="shop-container" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        <div class="cyber-card p-6 rounded-lg text-center">
+                            <i class="fas fa-bolt text-5xl text-yellow-400 mb-4"></i>
+                            <h3 class="font-bold text-xl text-white">XP Boost (24hr)</h3>
+                            <p class="text-gray-400 mb-4">+25% XP from missions for 24 hours.</p>
+                            <button class="cyber-button bg-purple-500/20 text-purple-300 font-bold py-2 px-4 rounded-lg"><i class="fas fa-database mr-2"></i>200 SP</button>
+                        </div>
+                         <div class="cyber-card p-6 rounded-lg text-center">
+                            <i class="fas fa-sack-dollar text-5xl text-green-400 mb-4"></i>
+                            <h3 class="font-bold text-xl text-white">Coin Pack</h3>
+                            <p class="text-gray-400 mb-4">Receive 500 bonus coins instantly.</p>
+                            <button class="cyber-button bg-purple-500/20 text-purple-300 font-bold py-2 px-4 rounded-lg"><i class="fas fa-database mr-2"></i>150 SP</button>
+                        </div>
+                    </div>
                 </div>
             </main>
         </div>
     </div>
 
-    <!-- Modals -->
-    <div id="add-task-modal" class="modal items-center justify-center">
+    <!-- Modals --><div id="add-task-modal" class="modal items-center justify-center">
         <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-md mx-auto modal-content">
             <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Add New Mission</h2>
             <form id="add-task-form" class="space-y-4">
@@ -239,57 +257,98 @@
     <script type="module">
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-        import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signInAnonymously, signInWithCustomToken } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
+        import { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
         import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
-        // --- CONFIG & DUMMY DATA ---
-        const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {};
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // --- FIREBASE CONFIGURATION ---
+        // REPLACE THIS OBJECT WITH YOUR ACTUAL FIREBASE CONFIG FROM THE FIREBASE CONSOLE
+        // Go to Firebase Console -> Project settings -> Your apps -> Web app -> Config
+        const firebaseConfig = {
+          apiKey: "AIzaSyDv_NELQ4t4vDGsjjGYjjClt7tw1PXiNjg", // e.g., "AIzaSyC0-YOUR-API-KEY"
+          authDomain: "studyypt-1fa01.firebaseapp.com", // e.g., "your-project-id.firebaseapp.com"
+          projectId: "studyypt-1fa01", // e.g., "your-project-id"
+          storageBucket: "studyypt-1fa01.firebasestorage.app", // e.g., "your-project-id.appspot.com"
+          messagingSenderId: "366344997103", // e.g., "1234567890"
+          appId: 1:366344997103:web:2021dd4fab722caf2b331a", 
+          measurementId: "G-8L0G02Q5WE" // Optional
+        };
+        
+        const appId = firebaseConfig.appId.split(':')[1]; // Extract app ID for Firestore paths
 
+        // --- DUMMY DATA & CONSTANTS ---
         const QUOTES = [ { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" }, { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" }, { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill"} ];
         const LEAGUES = [
-            { name: "Bronze", minXP: 0, icon: "fa-solid fa-shield-bronze", color: "text-orange-400" }, 
-            { name: "Silver", minXP: 1000, icon: "fa-solid fa-shield-cat", color: "text-gray-300" },
-            { name: "Legend", minXP: 40000, icon: "fa-solid fa-shield-plus", color: "text-purple-400" }
+            { name: "Bronze", minXP: 0, icon: "fa-solid fa-medal", color: "text-orange-400" }, 
+            { name: "Silver", minXP: 1000, icon: "fa-solid fa-trophy", color: "text-gray-300" },
+            { name: "Gold", minXP: 5000, icon: "fa-solid fa-crown", color: "text-yellow-400" },
+            { name: "Platinum", minXP: 15000, icon: "fa-solid fa-gem", color: "text-blue-400" },
+            { name: "Diamond", minXP: 30000, icon: "fa-solid fa-star", color: "text-purple-400" },
+            { name: "Legend", minXP: 50000, icon: "fa-solid fa-dragon", color: "text-red-500" }
         ];
-        const SHOP_ITEMS = [ { id: 'xp_boost_1', name: 'XP Boost (1 Day)', description: '+25% XP from tasks', cost: 150, currency: 'sp', icon: 'fa-bolt' }];
-        const MOCK_ACHIEVEMENTS = [ { id: 'ach1', name: 'First Mission', icon: 'fa-shoe-prints' }, { id: 'ach2', name: 'Taskmaster', icon: 'fa-tasks' }];
-        const STUDY_PASS_REWARDS = [ { xp: 50, type: "coins", value: 50 }, { xp: 10000, type: "title", value: "Legend" }];
+        const SHOP_ITEMS = [ 
+            { id: 'xp_boost_1', name: 'XP Boost (24hr)', description: '+25% XP from tasks', cost: 200, currency: 'sp', icon: 'fa-bolt' },
+            { id: 'coin_pack_1', name: 'Coin Pack (500)', description: 'Receive 500 bonus coins', cost: 150, currency: 'sp', icon: 'fa-sack-dollar' }
+        ];
+        const MOCK_ACHIEVEMENTS = [ 
+            { id: 'first_mission', name: 'First Mission', description: 'Complete your first task', icon: 'fa-shoe-prints', achieved: false }, 
+            { id: 'task_master', name: 'Task Master', description: 'Complete 10 tasks', icon: 'fa-tasks', achieved: false },
+            { id: 'level_5', name: 'Ascendant', description: 'Reach Level 5', icon: 'fa-arrow-up', achieved: false }
+        ];
+        const STUDY_PASS_REWARDS = [ 
+            { xp: 0, coins: 50, sp: 20, title: "Rookie" },
+            { xp: 1000, coins: 100, sp: 30, title: "Apprentice" },
+            { xp: 2500, coins: 150, sp: 40, title: "Journeyman" },
+            { xp: 5000, coins: 200, sp: 50, title: "Scholar" },
+            { xp: 7500, coins: 250, sp: 60, title: "Adept" },
+            { xp: 10000, coins: 300, sp: 70, title: "Mastermind" },
+            { xp: 15000, coins: 400, sp: 80, title: "Grandmaster" },
+            { xp: 20000, coins: 500, sp: 100, title: "Legendary" }
+        ];
+
 
         // --- FIREBASE & STATE ---
         let app, auth, db, storage;
-        let userData;
+        let userData = {
+            displayName: 'Operative',
+            profilePicUrl: 'https://placehold.co/128x128/01040a/00ffff?text=U',
+            level: 1, xp: 0, coins: 0, sp: 0, monthlyXP: 0, todayXP: 0,
+            tasks: [], achievements: MOCK_ACHIEVEMENTS,
+            studyPassProgress: { claimedTiers: [] },
+            createdAt: new Date().toISOString(),
+            lastQuoteDate: null
+        };
         let botsData = [
             { name: 'Cipher', level: 15, monthlyXP: 12540, profilePicUrl: 'https://placehold.co/40x40/9333ea/ffffff?text=C' }, 
             { name: 'Glitch', level: 12, monthlyXP: 9870, profilePicUrl: 'https://placehold.co/40x40/be123c/ffffff?text=G' },
             { name: 'Byte', level: 10, monthlyXP: 7500, profilePicUrl: 'https://placehold.co/40x40/16a34a/ffffff?text=B' }, 
             { name: 'Vector', level: 8, monthlyXP: 5200, profilePicUrl: 'https://placehold.co/40x40/ca8a04/ffffff?text=V' }
         ];
-        let unsubscribeUser; // To detach the Firestore listener on logout
+        let unsubscribeUser; 
         
         // --- INITIALIZATION ---
         window.onload = () => {
-            if (Object.keys(firebaseConfig).length > 0) {
+            if (firebaseConfig.apiKey && firebaseConfig.apiKey !== "YOUR_API_KEY") {
                 app = initializeApp(firebaseConfig);
                 auth = getAuth(app);
                 db = getFirestore(app);
                 storage = getStorage(app);
                 setupAuthObserver();
             } else {
-                console.error("Firebase config not found.");
+                document.getElementById('login-status').textContent = 'Please configure Firebase API keys in the script.';
+                document.getElementById('google-sign-in-btn').style.display = 'none';
+                console.error("Firebase config not found or invalid.");
             }
             setupEventListeners();
-            updateDailyQuote();
         };
 
         function setupAuthObserver() {
             onAuthStateChanged(auth, async user => {
-                if (unsubscribeUser) unsubscribeUser(); // Detach previous listener
+                if (unsubscribeUser) unsubscribeUser(); 
                 if (user) {
-                    await loadUserData(user);
                     document.getElementById('login-view').classList.add('hidden');
                     document.getElementById('app-view').classList.remove('hidden');
+                    await loadUserData(user);
                 } else {
                     document.getElementById('login-view').classList.remove('hidden');
                     document.getElementById('app-view').classList.add('hidden');
@@ -297,14 +356,35 @@
             });
         }
         
+        async function signInWithGoogle() {
+            const provider = new GoogleAuthProvider();
+            try {
+                await signInWithPopup(auth, provider);
+            } catch (error) {
+                console.error("Google Sign-In failed:", error);
+                alert("Failed to sign in with Google: " + error.message);
+            }
+        }
+
         // --- PERSISTENCE (Firestore) ---
         async function loadUserData(user) {
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             unsubscribeUser = onSnapshot(userRef, async (docSnap) => {
                 if (docSnap.exists()) {
                     userData = docSnap.data();
+                    // Reset todayXP if new day
+                    const today = new Date().toDateString();
+                    if (!userData.lastLoginDate || new Date(userData.lastLoginDate).toDateString() !== today) {
+                        userData.todayXP = 0;
+                        userData.lastLoginDate = today;
+                        await saveUserData(); // Save the reset
+                    }
+                     if (!userData.lastQuoteDate || new Date(userData.lastQuoteDate).toDateString() !== today) {
+                        updateDailyQuote();
+                        userData.lastQuoteDate = today;
+                        await saveUserData(); 
+                    }
                 } else {
-                    console.log("No user data found, creating new profile...");
                     await createInitialUserData(user);
                 }
                 updateUI();
@@ -312,6 +392,7 @@
         }
 
         async function createInitialUserData(user) {
+            const today = new Date().toDateString();
             const newUserData = {
                 uid: user.uid,
                 displayName: user.displayName || 'Operative',
@@ -319,12 +400,14 @@
                 profilePicUrl: user.photoURL || `https://placehold.co/128x128/01040a/00ffff?text=${user.displayName ? user.displayName.charAt(0) : 'U'}`,
                 createdAt: new Date().toISOString(),
                 level: 1, xp: 0, coins: 50, sp: 5, monthlyXP: 0,
-                tasks: [], purchasedItems: [], todayXP: 0, achievements: [],
-                studyPassProgress: { claimedTiers: [] }
+                tasks: [], purchasedItems: [], todayXP: 0, achievements: MOCK_ACHIEVEMENTS,
+                studyPassProgress: { claimedTiers: [] },
+                lastLoginDate: today,
+                lastQuoteDate: today
             };
             const userRef = doc(db, `artifacts/${appId}/users/${user.uid}/profile/data`);
             await setDoc(userRef, newUserData);
-            await updatePublicProfile(newUserData); // Create public profile
+            await updatePublicProfile(newUserData); 
             userData = newUserData;
         }
 
@@ -342,7 +425,8 @@
                 displayName: data.displayName,
                 profilePicUrl: data.profilePicUrl,
                 monthlyXP: data.monthlyXP,
-                level: data.level
+                level: data.level,
+                uid: data.uid,
              };
              await setDoc(publicRef, publicData, { merge: true });
         }
@@ -365,13 +449,21 @@
             userData.sp += task.sp;
             userData.monthlyXP += task.xp;
             userData.todayXP += task.xp;
-            const xpForNextLevel = userData.level * 100;
+            
+            const xpForNextLevel = userData.level * 100; // XP needed for next level
             if (userData.xp + task.xp >= xpForNextLevel) {
                 userData.level++;
-                userData.xp = (userData.xp + task.xp) - xpForNextLevel;
+                userData.xp = (userData.xp + task.xp) - xpForNextLevel; // Carry over excess XP
+                checkAchievements('level_5');
             } else {
                 userData.xp += task.xp;
             }
+
+            checkAchievements('first_mission');
+            if (userData.tasks.filter(t => t.completed).length >= 10) {
+                 checkAchievements('task_master');
+            }
+
             saveUserData();
         }
 
@@ -383,11 +475,65 @@
                 const downloadURL = await getDownloadURL(snapshot.ref);
                 userData.profilePicUrl = downloadURL;
                 await saveUserData();
+                alert("Avatar uploaded successfully!");
             } catch (error) {
                 console.error("Error uploading file:", error);
-                alert("Failed to upload avatar.");
+                alert("Failed to upload avatar: " + error.message);
             }
         }
+        
+        function checkAchievements(achievementId) {
+            const achievement = userData.achievements.find(a => a.id === achievementId);
+            if (achievement && !achievement.achieved) {
+                achievement.achieved = true;
+                alert(`Achievement Unlocked: ${achievement.name}!`);
+                // Optionally add rewards for achievements here
+            }
+        }
+
+        function claimStudyPassReward(tierIndex) {
+            if (!userData) return;
+            const tier = STUDY_PASS_REWARDS[tierIndex];
+            if (!tier) return;
+            if (userData.monthlyXP < tier.xp) {
+                alert("You haven't reached this tier yet!");
+                return;
+            }
+            if (userData.studyPassProgress.claimedTiers.includes(tierIndex)) {
+                alert("You've already claimed this reward!");
+                return;
+            }
+
+            if (tier.coins) userData.coins += tier.coins;
+            if (tier.sp) userData.sp += tier.sp;
+            // Handle titles or other rewards here
+            if (tier.title) alert(`New Title Unlocked: ${tier.title}!`);
+
+            userData.studyPassProgress.claimedTiers.push(tierIndex);
+            saveUserData();
+            alert(`Reward claimed for Tier ${tierIndex + 1}!`);
+        }
+
+        function purchaseShopItem(itemId) {
+            const item = SHOP_ITEMS.find(i => i.id === itemId);
+            if (!item) return;
+
+            if (item.currency === 'coins' && userData.coins < item.cost) {
+                alert("Not enough coins!");
+                return;
+            }
+            if (item.currency === 'sp' && userData.sp < item.cost) {
+                alert("Not enough Study Points!");
+                return;
+            }
+
+            if (item.currency === 'coins') userData.coins -= item.cost;
+            if (item.currency === 'sp') userData.sp -= item.cost;
+
+            alert(`Purchased ${item.name}!`);
+            saveUserData();
+        }
+
 
         // --- UI RENDERING ---
         function updateUI() {
@@ -395,19 +541,28 @@
             const currentLeague = LEAGUES.slice().reverse().find(l => userData.monthlyXP >= l.minXP) || LEAGUES[0];
             const pfpUrl = userData.profilePicUrl;
 
-            ['header-user-name', 'dashboard-profile-name'].forEach(id => document.getElementById(id).textContent = userData.displayName);
-            ['header-user-coins'].forEach(id => document.getElementById(id).textContent = userData.coins);
-            ['header-user-sp'].forEach(id => document.getElementById(id).textContent = userData.sp);
-            ['header-user-level'].forEach(id => document.getElementById(id).textContent = `LVL ${userData.level}`);
-            ['header-xp-bar'].forEach(id => document.getElementById(id).style.width = `${(userData.xp / (userData.level * 100)) * 100}%`);
+            document.getElementById('header-user-name').textContent = userData.displayName || 'Operative';
+            document.getElementById('dashboard-profile-name').textContent = userData.displayName || 'Operative';
+            document.getElementById('header-user-coins').textContent = userData.coins;
+            document.getElementById('header-user-sp').textContent = userData.sp;
+            document.getElementById('header-user-level').textContent = `LVL ${userData.level}`;
+            document.getElementById('dashboard-total-xp').textContent = userData.xp;
+            document.getElementById('dashboard-today-xp').textContent = userData.todayXP;
+
+            const xpForCurrentLevel = (userData.level - 1) * 100;
+            const xpForNextLevel = userData.level * 100;
+            const currentLevelXPProgress = userData.xp; // This is the XP within the current level
+            const percentage = (currentLevelXPProgress / xpForNextLevel) * 100;
+            document.getElementById('header-xp-bar').style.width = `${Math.min(100, percentage)}%`;
+
             ['header-profile-pic', 'dashboard-profile-pic', 'profile-pic'].forEach(id => document.getElementById(id).src = pfpUrl);
             
             document.getElementById('dashboard-profile-league').innerHTML = `<i class="fas ${currentLeague.icon} mr-2 ${currentLeague.color}"></i> ${currentLeague.name}`;
-            document.getElementById('dashboard-today-xp').textContent = userData.todayXP;
             document.getElementById('member-since').textContent = new Date(userData.createdAt).toLocaleDateString();
             document.getElementById('profile-name-input').value = userData.displayName;
 
             renderTasks();
+            renderLeaderboard(); // Make sure leaderboard is updated
             renderShop();
             renderStudyPass();
             renderAchievements();
@@ -415,7 +570,7 @@
         
         function renderTasks() {
             const container = document.getElementById('daily-tasks-container');
-            if (!container) return;
+            if (!container || !userData.tasks) return;
             container.innerHTML = userData.tasks.length === 0 ? `<div class="text-center text-gray-400 p-8 cyber-card rounded-lg">No missions for today. Add one!</div>` : '';
             userData.tasks.forEach(task => {
                 const el = document.createElement('div');
@@ -448,13 +603,24 @@
             const snapshot = await getDocs(leaderboardCol);
             const usersFromDB = snapshot.docs.map(doc => doc.data());
 
+            // Merge current user's data if not already in DB snapshot (e.g., first load before Firestore updates)
+            if (auth.currentUser && !usersFromDB.some(u => u.uid === auth.currentUser.uid)) {
+                usersFromDB.push({
+                    displayName: userData.displayName,
+                    profilePicUrl: userData.profilePicUrl,
+                    monthlyXP: userData.monthlyXP,
+                    level: userData.level,
+                    uid: userData.uid
+                });
+            }
+
             const allPlayers = [...usersFromDB, ...botsData];
             allPlayers.sort((a, b) => b.monthlyXP - a.monthlyXP);
 
             container.innerHTML = '';
             allPlayers.forEach((player, index) => {
                 const row = document.createElement('tr');
-                row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20' : ''}`;
+                row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20 text-white' : ''}`;
                 row.innerHTML = `
                     <td class="p-4 font-bold text-lg font-orbitron">${index + 1}</td>
                     <td class="p-4"><img src="${player.profilePicUrl}" class="w-10 h-10 rounded-full object-cover"></td>
@@ -465,19 +631,105 @@
             });
         }
         
-        function renderShop() { /* Stub */ }
-        function renderStudyPass() { /* Stub */ }
-        function renderAchievements() { /* Stub */ }
-        function updateDailyQuote() { /* Stub */ }
+        function renderShop() {
+            const container = document.getElementById('shop-container');
+            if (!container) return;
+            container.innerHTML = ''; // Clear previous content
+
+            SHOP_ITEMS.forEach(item => {
+                const itemEl = document.createElement('div');
+                itemEl.className = 'cyber-card p-6 rounded-lg text-center';
+                itemEl.innerHTML = `
+                    <i class="fas ${item.icon} text-5xl text-yellow-400 mb-4"></i>
+                    <h3 class="font-bold text-xl text-white">${item.name}</h3>
+                    <p class="text-gray-400 mb-4">${item.description}</p>
+                    <button class="cyber-button purchase-item-btn bg-purple-500/20 text-purple-300 font-bold py-2 px-4 rounded-lg" data-item-id="${item.id}">
+                        <i class="fas ${item.currency === 'sp' ? 'fa-database' : 'fa-coins'} mr-2"></i>${item.cost} ${item.currency.toUpperCase()}
+                    </button>
+                `;
+                container.appendChild(itemEl);
+            });
+            document.querySelectorAll('.purchase-item-btn').forEach(btn => btn.addEventListener('click', (e) => purchaseShopItem(e.currentTarget.dataset.itemId)));
+        }
+
+        function renderStudyPass() {
+            const container = document.getElementById('study-pass-container');
+            if (!container) return;
+            container.innerHTML = ''; 
+
+            const totalXPNeeded = STUDY_PASS_REWARDS[STUDY_PASS_REWARDS.length - 1].xp;
+            const currentPassXP = userData.monthlyXP;
+            const passPercentage = (currentPassXP / totalXPNeeded) * 100;
+            document.getElementById('pass-progress-bar').style.width = `${Math.min(100, passPercentage)}%`;
+            document.getElementById('pass-progress-bar').textContent = `${Math.min(totalXPNeeded, currentPassXP)} / ${totalXPNeeded} XP`;
+
+
+            STUDY_PASS_REWARDS.forEach((tier, index) => {
+                const isClaimed = userData.studyPassProgress.claimedTiers.includes(index);
+                const isUnlocked = userData.monthlyXP >= tier.xp;
+                const tierEl = document.createElement('div');
+                tierEl.className = `cyber-card p-4 rounded-lg text-center ${!isUnlocked ? 'opacity-50 grayscale' : ''}`;
+                tierEl.innerHTML = `
+                    <h4 class="font-bold text-xl text-white">Tier ${index + 1}</h4>
+                    <p class="text-gray-400">Requires: ${tier.xp} XP</p>
+                    ${tier.coins ? `<p class="text-yellow-300">${tier.coins} Coins</p>` : ''}
+                    ${tier.sp ? `<p class="text-purple-300">${tier.sp} SP</p>` : ''}
+                    ${tier.title ? `<p class="text-cyan-300">Title: ${tier.title}</p>` : ''}
+                    <button class="cyber-button claim-pass-btn mt-2 py-1 px-3 rounded-lg 
+                        ${isClaimed ? 'bg-gray-600/50 text-gray-300' : 'bg-green-500/20 text-green-300'}
+                        " data-tier-index="${index}" ${!isUnlocked || isClaimed ? 'disabled' : ''}>
+                        ${isClaimed ? 'Claimed <i class="fas fa-check"></i>' : (isUnlocked ? 'Claim Reward' : 'Locked <i class="fas fa-lock"></i>')}
+                    </button>
+                `;
+                container.appendChild(tierEl);
+            });
+             document.querySelectorAll('.claim-pass-btn').forEach(btn => btn.addEventListener('click', (e) => claimStudyPassReward(parseInt(e.currentTarget.dataset.tierIndex))));
+        }
+
+        function renderAchievements() {
+            const container = document.getElementById('achievements-container');
+            if (!container) return;
+            container.innerHTML = '';
+
+            userData.achievements.forEach(achievement => {
+                const achEl = document.createElement('div');
+                achEl.className = `cyber-card p-4 rounded-lg text-center ${!achievement.achieved ? 'opacity-50 grayscale' : ''}`;
+                achEl.innerHTML = `
+                    <i class="fas ${achievement.icon} text-4xl text-cyan-400 mb-2"></i>
+                    <h4 class="font-bold text-lg text-white">${achievement.name}</h4>
+                    <p class="text-gray-400 text-sm">${achievement.description}</p>
+                    ${achievement.achieved ? '<span class="text-green-400 font-bold mt-2 block">Achieved!</span>' : ''}
+                `;
+                container.appendChild(achEl);
+            });
+        }
+
+        function updateDailyQuote() {
+            const today = new Date().toDateString();
+            if (userData.lastQuoteDate === today) {
+                // If quote already set for today, retrieve it (or keep previous)
+                document.getElementById('quote-text').textContent = userData.currentQuoteText || QUOTES[0].text;
+                document.getElementById('quote-author').textContent = userData.currentQuoteAuthor || QUOTES[0].author;
+                return;
+            }
+
+            const randomIndex = Math.floor(Math.random() * QUOTES.length);
+            const quote = QUOTES[randomIndex];
+            document.getElementById('quote-text').textContent = quote.text;
+            document.getElementById('quote-author').textContent = `- ${quote.author}`;
+            
+            // Save current quote and date to user data
+            userData.currentQuoteText = quote.text;
+            userData.currentQuoteAuthor = quote.author;
+            userData.lastQuoteDate = today;
+            saveUserData(); // This will trigger UI update and save
+        }
 
 
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
-            document.getElementById('login-btn').addEventListener('click', () => {
-                const provider = new GoogleAuthProvider();
-                signInWithPopup(auth, provider).catch(err => console.error(err));
-            });
-            
+            document.getElementById('google-sign-in-btn').addEventListener('click', signInWithGoogle);
+
             document.querySelectorAll('.nav-link').forEach(link => {
                 link.addEventListener('click', e => {
                     e.preventDefault();
@@ -488,9 +740,11 @@
                     e.currentTarget.classList.add('p-3', 'bg-cyan-500/20', 'rounded-lg');
                     document.getElementById('page-title').textContent = e.currentTarget.querySelector('.tooltip').textContent;
                     
-                    if (targetId === 'leaderboard') {
-                        renderLeaderboard();
-                    }
+                    // Specific page render calls
+                    if (targetId === 'leaderboard') renderLeaderboard();
+                    if (targetId === 'profile') renderAchievements(); // Rerender achievements too
+                    if (targetId === 'pass') renderStudyPass();
+                    if (targetId === 'shop') renderShop();
                 });
             });
 
@@ -525,12 +779,17 @@
                 }
             });
             
-            document.getElementById('update-profile-btn').addEventListener('click', () => {
-                userData.displayName = document.getElementById('profile-name-input').value;
-                saveUserData();
-                alert('Profile name updated!');
+            document.getElementById('update-profile-btn').addEventListener('click', async () => {
+                const newName = document.getElementById('profile-name-input').value;
+                if (newName && newName !== userData.displayName) {
+                    userData.displayName = newName;
+                    await saveUserData();
+                    alert('Profile name updated!');
+                }
             });
         }
     </script>
 </body>
 </html>
+
+
