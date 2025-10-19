@@ -83,6 +83,10 @@
             color: #FFD700;
             text-shadow: 0 0 8px #FFD700, 0 0 12px #FFA500;
         }
+        .fa-check-circle.verified-title {
+            color: #38bdf8;
+            text-shadow: 0 0 8px #38bdf8, 0 0 12px #0ea5e9;
+        }
 
     </style>
 </head>
@@ -459,6 +463,7 @@
             { id: 'title_quant', type: 'title', name: 'Title: The Quant', description: 'For the master of numbers.', cost: 1500, currency: 'sp', icon: 'fa-calculator' },
             { id: 'title_physicist', type: 'title', name: 'Title: The Physicist', description: 'For the explorer of reality.', cost: 3000, currency: 'coins', icon: 'fa-atom' },
             { id: 'title_founder', type: 'title', name: 'Title: Founder', description: 'For the original creator.', cost: 999999, currency: 'sp', icon: 'fa-crown', hidden: true },
+            { id: 'title_verified', type: 'title', name: 'Title: Verified', description: 'Show off your official status.', cost: 1, currency: 'coins', icon: 'fa-check-circle' },
             { id: 'sp_pack_1', type: 'currency', name: '100 SP Pack', description: 'Get 100 SP for 2000 Coins.', cost: 2000, currency: 'coins' },
         ];
         const MOCK_ACHIEVEMENTS = [ 
@@ -966,7 +971,13 @@
 
             const profileTitleEl = document.getElementById('profile-title');
             const equippedTitle = SHOP_ITEMS.find(item => item.id === userData.equippedTitle && item.type === 'title');
-            const titleIconHTML = equippedTitle ? `<i class="fas ${equippedTitle.icon} ${equippedTitle.id === 'title_founder' ? 'founder-title' : 'text-cyan-300'} ml-2"></i>` : '';
+            let titleIconHTML = '';
+            if(equippedTitle){
+                 let iconClass = 'text-cyan-300';
+                if(equippedTitle.id === 'title_founder') iconClass = 'founder-title';
+                if(equippedTitle.id === 'title_verified') iconClass = 'verified-title';
+                titleIconHTML = `<i class="fas ${equippedTitle.icon} ${iconClass} ml-2"></i>`;
+            }
             
             document.getElementById('header-user-name').innerHTML = `${userData.displayName || 'Operative'}${titleIconHTML}`;
             document.getElementById('dashboard-profile-name').innerHTML = `${userData.displayName || 'Operative'}${titleIconHTML}`;
@@ -1074,7 +1085,6 @@
             allPlayers.forEach((player, index) => {
                 const playerLeague = LEAGUES.slice().reverse().find(l => player.monthlyXP >= l.minXP) || LEAGUES[0];
                 const displayTier = STUDY_PASS_REWARDS.filter(tier => player.monthlyXP >= tier.xp).length;
-                
                 let titleIconHTML = '';
                 if(player.isBot){
                     titleIconHTML = `<i class="fas fa-microchip text-gray-500 ml-2"></i>`;
