@@ -1071,7 +1071,7 @@
             const container = document.getElementById('leagues-container');
             if (!container || !userData) return;
 
-            const allPlayers = allUsersCache;
+            const allPlayers = [...allUsersCache, ...botsData];
             
             container.innerHTML = '';
             LEAGUES.forEach((league, index) => {
@@ -1806,6 +1806,5 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
     </script>
 </body>
 </html>
-
 
 
