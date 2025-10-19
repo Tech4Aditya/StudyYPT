@@ -370,7 +370,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove, where, addDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -454,6 +454,8 @@
         let unsubscribeUser; 
         let currentCalendarDate = new Date();
         let allUsersCache = [];
+        let incomingRequestsCache = [];
+        let socialListeners = [];
         let allUsersListenerAttached = false;
 
         // --- INITIALIZATION ---
@@ -469,34 +471,12 @@
             setupEventListeners();
         };
 
-        async function fetchAllUsers() {
-            const usersRef = collection(db, `artifacts/${appId}/public/data/profiles`);
-            onSnapshot(usersRef, 
-                (snapshot) => {
-                    allUsersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    // If the user is currently on a page that needs all user data, re-render it
-                    if (!document.getElementById('leaderboard').classList.contains('hidden')) {
-                        renderLeaderboard();
-                    }
-                    if (!document.getElementById('leagues').classList.contains('hidden')) {
-                        renderLeaguesPage();
-                    }
-                     if (!document.getElementById('social').classList.contains('hidden')) {
-                        renderSocialPage();
-                    }
-                },
-                (error) => {
-                    console.error("Error fetching all users:", error);
-                    if (error.code === 'permission-denied') {
-                        alert("Firestore Permission Error: Could not load user profiles.\n\nPlease update your Firestore Security Rules in the Firebase Console with the following to allow users to see each other:\n\nmatch /artifacts/{appId}/public/data/profiles/{userId} {\n  allow read: if request.auth != null;\n  allow write: if request.auth != null && request.auth.uid == userId;\n}");
-                    }
-                }
-            );
-        }
-
         function setupAuthObserver() {
             onAuthStateChanged(auth, user => {
                 if (unsubscribeUser) unsubscribeUser(); 
+                socialListeners.forEach(unsub => unsub());
+                socialListeners = [];
+                
                 if (user) {
                     if (!allUsersListenerAttached) {
                         fetchAllUsers();
@@ -511,6 +491,21 @@
                     allUsersListenerAttached = false;
                 }
             });
+        }
+        
+        async function fetchAllUsers() {
+            const usersRef = collection(db, `artifacts/${appId}/public/data/profiles`);
+            onSnapshot(usersRef, 
+                (snapshot) => {
+                    allUsersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    if (!document.getElementById('leaderboard').classList.contains('hidden')) renderLeaderboard();
+                    if (!document.getElementById('leagues').classList.contains('hidden')) renderLeaguesPage();
+                    if (!document.getElementById('social').classList.contains('hidden')) renderSocialPage();
+                },
+                (error) => {
+                    console.error("Error fetching all users:", error);
+                }
+            );
         }
         
         async function signOutUser() {
@@ -531,33 +526,19 @@
 
             try {
                 if (isLoginMode) {
-                    if (!email || !password) {
-                        alert("Please provide an email and password to sign in.");
-                        return;
-                    }
                     await signInWithEmailAndPassword(auth, email, password);
                 } else {
-                    if (!username || !email || !password) {
-                        alert("Please fill in all fields to create an account.");
-                        return;
-                    }
+                    if (!username || !email || !password) throw new Error("Please fill in all fields.");
                     const usernameRef = doc(db, `usernames/${username}`);
                     const usernameSnap = await getDoc(usernameRef);
-                    if (usernameSnap.exists()) {
-                        throw new Error("Username is already taken. Please choose another.");
-                    }
+                    if (usernameSnap.exists()) throw new Error("Username is already taken.");
+                    
                     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
                     await createInitialUserData(userCredential.user, username);
                 }
             } catch (error) {
                 console.error("Auth error:", error);
-                 if (error.code === 'auth/wrong-password' || error.code === 'auth/user-not-found' || error.message === "Username not found.") {
-                    alert('Incorrect email or password.');
-                } else if (error.code === 'permission-denied' || error.code === 'PERMISSION_DENIED') {
-                    alert("Authentication failed: Permission Denied.\n\nThis is a Firebase Security Rule issue.\n\nPlease go to your Firebase Console -> Firestore Database -> Rules and add the following rule inside the `match /databases/{database}/documents { ... }` block:\n\nmatch /usernames/{username} {\n  allow read, create: if true;\n}\n\nThis allows the app to check if a username is available before creating an account.");
-                } else {
-                    alert(`Authentication failed: ${error.message}`);
-                }
+                alert(`Authentication failed: ${error.message}`);
             }
         }
 
@@ -615,12 +596,9 @@
                 }
             }, (error) => {
                 console.error("Snapshot error:", error);
-                if(error.code === 'permission-denied') {
-                    alert("Firestore Permission Error: Could not load your profile.\n\nPlease check your Firestore Security Rules in the Firebase Console. Make sure you have a rule that allows users to read and write their own data, like this:\n\nmatch /artifacts/{appId}/users/{userId}/profile/data {\n  allow read, write: if request.auth != null && request.auth.uid == userId;\n}");
-                }
             });
         }
-
+        
         async function handleFirstTimeSetup(e) {
             e.preventDefault();
             const displayName = document.getElementById('setup-display-name').value;
@@ -638,6 +616,7 @@
                 alert(`Setup failed: ${error.message}`);
             }
         }
+
 
         async function createInitialUserData(user, username) {
             const today = new Date().toDateString();
@@ -657,7 +636,6 @@
                 tasks: {}, purchasedItems: [], todayXP: 0, tasksCompletedToday: 0, achievements: MOCK_ACHIEVEMENTS,
                 studyPassProgress: { claimedTiers: [] },
                 friends: [],
-                friendRequests: { sent: [], received: [] },
                 lastLoginDate: today,
                 lastQuoteDate: today,
                 lastSeasonId: seasonInfo.id
@@ -846,7 +824,7 @@
         function updateUI() {
             if (!userData) return;
 
-            checkAndUnlockLeagueAvatars(); // Check for new league avatars on every update
+            checkAndUnlockLeagueAvatars();
 
             const currentLeague = LEAGUES.slice().reverse().find(l => userData.monthlyXP >= l.minXP) || LEAGUES[0];
             const pfpUrl = userData.profilePicUrl || `https://placehold.co/128x128/01040a/00ffff?text=${userData.displayName ? userData.displayName.charAt(0).toUpperCase() : '?'}`;
@@ -871,10 +849,10 @@
 
             const currentTierIndex = STUDY_PASS_REWARDS.slice().reverse().findIndex(tier => userData.monthlyXP >= tier.xp);
             const totalTiers = STUDY_PASS_REWARDS.length;
-            const displayTier = currentTierIndex === -1 ? totalTiers : currentTierIndex + 1;
+            const displayTier = currentTierIndex === -1 ? 0 : STUDY_PASS_REWARDS.length - currentTierIndex;
 
 
-            document.getElementById('dashboard-pass-tier').textContent = `Tier ${displayTier}`;
+            document.getElementById('dashboard-pass-tier').textContent = `${displayTier}`;
 
 
             ['header-profile-pic', 'dashboard-profile-pic', 'profile-pic'].forEach(id => document.getElementById(id).src = pfpUrl);
@@ -954,8 +932,7 @@
             allPlayers.forEach((player, index) => {
                 const playerLeague = LEAGUES.slice().reverse().find(l => player.monthlyXP >= l.minXP) || LEAGUES[0];
                 const currentTierIndex = STUDY_PASS_REWARDS.slice().reverse().findIndex(tier => player.monthlyXP >= tier.xp);
-                const totalTiers = STUDY_PASS_REWARDS.length;
-                const displayTier = currentTierIndex === -1 ? totalTiers : currentTierIndex + 1;
+                 const displayTier = currentTierIndex === -1 ? 0 : STUDY_PASS_REWARDS.length - currentTierIndex;
 
                 const row = document.createElement('tr');
                 row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20 text-white' : ''}`;
@@ -1242,39 +1219,88 @@
         }
         
         // --- SOCIAL FEATURES ---
+
+        function showPermissionErrorAlert() {
+            const rule = `
+match /artifacts/{appId}/public/data/friend_requests/{requestId} {
+    allow read, create, update, delete: if request.auth != null;
+}`;
+            alert("Firestore Permission Error: The social features require a security rule update.\nPlease add the following rule to your Firestore project to allow friend requests:\n" + rule);
+        }
+        
+        function setupSocialListeners() {
+            if (!auth.currentUser) return;
+            socialListeners.forEach(unsub => unsub());
+            socialListeners = [];
+
+            const requestsRef = collection(db, `artifacts/${appId}/public/data/friend_requests`);
+            const incomingQuery = query(requestsRef, where("receiverId", "==", auth.currentUser.uid), where("status", "==", "pending"));
+            const unsubIncoming = onSnapshot(incomingQuery, 
+                (snapshot) => {
+                    incomingRequestsCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    renderSocialPage(); 
+                },
+                (error) => {
+                    console.error("Error on incoming requests listener:", error);
+                    if (error.code === 'permission-denied') {
+                        showPermissionErrorAlert();
+                    }
+                }
+            );
+            socialListeners.push(unsubIncoming);
+
+            const acceptedQuery = query(requestsRef, where("senderId", "==", auth.currentUser.uid), where("status", "==", "accepted"));
+            const unsubAccepted = onSnapshot(acceptedQuery, 
+                (snapshot) => {
+                    snapshot.docs.forEach(async (doc) => {
+                        const request = doc.data();
+                        const friends = userData.friends || [];
+                        if (!friends.includes(request.receiverId)) {
+                            const userRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
+                            await updateDoc(userRef, {
+                                friends: arrayUnion(request.receiverId)
+                            });
+                        }
+                        await deleteDoc(doc.ref);
+                    });
+                },
+                (error) => {
+                    console.error("Error on accepted requests listener:", error);
+                     if (error.code === 'permission-denied') {
+                        showPermissionErrorAlert();
+                    }
+                }
+            );
+            socialListeners.push(unsubAccepted);
+        }
+
         function renderSocialPage() {
             if (!userData) return;
 
             const requestsContainer = document.getElementById('friend-requests-container');
             const friendsContainer = document.getElementById('friends-list-container');
             
-            // Render Friend Requests
             requestsContainer.innerHTML = '';
-            const receivedRequests = userData.friendRequests?.received || [];
-            if (receivedRequests.length === 0) {
+            if (incomingRequestsCache.length === 0) {
                 requestsContainer.innerHTML = '<p class="text-gray-400">No new friend requests.</p>';
             } else {
-                receivedRequests.forEach(userId => {
-                    const user = allUsersCache.find(u => u.id === userId);
-                    if (user) {
-                        const requestEl = document.createElement('div');
-                        requestEl.className = 'cyber-card p-3 rounded-lg flex items-center justify-between';
-                        requestEl.innerHTML = `
-                            <div class="flex items-center gap-3">
-                                <img src="${user.profilePicUrl}" class="w-10 h-10 rounded-full object-cover">
-                                <span class="font-semibold">${user.displayName}</span>
-                            </div>
-                            <div class="flex gap-2">
-                                <button class="accept-friend-btn cyber-button text-sm bg-green-500/20 text-green-300 py-1 px-3 rounded-md" data-user-id="${user.id}"><i class="fas fa-check"></i></button>
-                                <button class="decline-friend-btn cyber-button text-sm bg-red-500/20 text-red-300 py-1 px-3 rounded-md" data-user-id="${user.id}"><i class="fas fa-times"></i></button>
-                            </div>
-                        `;
-                        requestsContainer.appendChild(requestEl);
-                    }
+                incomingRequestsCache.forEach(req => {
+                    const requestEl = document.createElement('div');
+                    requestEl.className = 'cyber-card p-3 rounded-lg flex items-center justify-between';
+                    requestEl.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <img src="${req.senderProfilePic}" class="w-10 h-10 rounded-full object-cover">
+                            <span class="font-semibold">${req.senderName}</span>
+                        </div>
+                        <div class="flex gap-2">
+                            <button class="accept-friend-btn cyber-button text-sm bg-green-500/20 text-green-300 py-1 px-3 rounded-md" data-request-id="${req.id}" data-sender-id="${req.senderId}"><i class="fas fa-check"></i></button>
+                            <button class="decline-friend-btn cyber-button text-sm bg-red-500/20 text-red-300 py-1 px-3 rounded-md" data-request-id="${req.id}"><i class="fas fa-times"></i></button>
+                        </div>
+                    `;
+                    requestsContainer.appendChild(requestEl);
                 });
             }
 
-            // Render Friends List
             friendsContainer.innerHTML = '';
             const friends = userData.friends || [];
             if (friends.length === 0) {
@@ -1302,68 +1328,75 @@
 
         async function sendFriendRequest(receiverId) {
             if (!auth.currentUser || auth.currentUser.uid === receiverId) return;
-
-            const currentUserRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
-            const receiverUserRef = doc(db, `artifacts/${appId}/users/${receiverId}/profile/data`);
-
+            
             try {
-                // Add receiver to sender's "sent" list
-                await updateDoc(currentUserRef, {
-                    'friendRequests.sent': arrayUnion(receiverId)
-                });
-                // Add sender to receiver's "received" list
-                await updateDoc(receiverUserRef, {
-                    'friendRequests.received': arrayUnion(auth.currentUser.uid)
+                const requestsRef = collection(db, `artifacts/${appId}/public/data/friend_requests`);
+                const q = query(requestsRef, 
+                    where("senderId", "==", auth.currentUser.uid),
+                    where("receiverId", "==", receiverId)
+                );
+                const existingRequest = await getDocs(q);
+
+                if (!existingRequest.empty) {
+                    alert("You have already sent a friend request to this user.");
+                    return;
+                }
+
+                await addDoc(requestsRef, {
+                    senderId: auth.currentUser.uid,
+                    senderName: userData.displayName,
+                    senderProfilePic: userData.profilePicUrl,
+                    receiverId: receiverId,
+                    status: 'pending',
+                    createdAt: serverTimestamp()
                 });
                 alert('Friend request sent!');
-                document.getElementById('user-search-input').dispatchEvent(new Event('keyup')); // Refresh search results
+                handleUserSearch({ target: document.getElementById('user-search-input') });
             } catch(e) {
                 console.error("Error sending friend request: ", e);
-                alert("Could not send friend request.");
+                if (e.code === 'permission-denied') {
+                    showPermissionErrorAlert();
+                } else {
+                    alert("Could not send friend request.");
+                }
             }
         }
         
-        async function acceptFriendRequest(requesterId) {
-            if (!auth.currentUser) return;
-            const currentUserRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
-            const requesterUserRef = doc(db, `artifacts/${appId}/users/${requesterId}/profile/data`);
+        async function acceptFriendRequest(requestId, senderId) {
+            if (!auth.currentUser || !requestId || !senderId) return;
 
             try {
-                // For current user: remove from received, add to friends
+                const currentUserRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
                 await updateDoc(currentUserRef, {
-                    'friendRequests.received': arrayRemove(requesterId),
-                    'friends': arrayUnion(requesterId)
+                    friends: arrayUnion(senderId)
                 });
-                // For requester: remove from sent, add to friends
-                 await updateDoc(requesterUserRef, {
-                    'friendRequests.sent': arrayRemove(auth.currentUser.uid),
-                    'friends': arrayUnion(auth.currentUser.uid)
+
+                const requestRef = doc(db, `artifacts/${appId}/public/data/friend_requests/${requestId}`);
+                await updateDoc(requestRef, {
+                    status: 'accepted'
                 });
             } catch(e) {
                 console.error("Error accepting friend request: ", e);
+                if (e.code === 'permission-denied') {
+                    showPermissionErrorAlert();
+                }
             }
         }
 
-        async function declineFriendRequest(requesterId) {
-             if (!auth.currentUser) return;
-            const currentUserRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
-            const requesterUserRef = doc(db, `artifacts/${appId}/users/${requesterId}/profile/data`);
-
+        async function declineFriendRequest(requestId) {
+            if (!requestId) return;
             try {
-                 // For current user: remove from received
-                await updateDoc(currentUserRef, {
-                    'friendRequests.received': arrayRemove(requesterId)
-                });
-                // For requester: remove from sent
-                 await updateDoc(requesterUserRef, {
-                    'friendRequests.sent': arrayRemove(auth.currentUser.uid)
-                });
+                const requestRef = doc(db, `artifacts/${appId}/public/data/friend_requests/${requestId}`);
+                await deleteDoc(requestRef);
             } catch(e) {
-                console.error("Error declining friend request: ", e);
+                 console.error("Error declining friend request: ", e);
+                 if (e.code === 'permission-denied') {
+                    showPermissionErrorAlert();
+                }
             }
         }
 
-        function handleUserSearch(e) {
+        async function handleUserSearch(e) {
             const searchTerm = e.target.value.toLowerCase();
             const resultsContainer = document.getElementById('user-search-results');
             resultsContainer.innerHTML = '';
@@ -1373,40 +1406,53 @@
                 user.displayName.toLowerCase().includes(searchTerm) &&
                 user.id !== auth.currentUser.uid
             );
+            
+            try {
+                const requestsRef = collection(db, `artifacts/${appId}/public/data/friend_requests`);
+                const q = query(requestsRef, where("senderId", "==", auth.currentUser.uid), where("status", "==", "pending"));
+                const sentRequestsSnap = await getDocs(q);
+                const sentRequestIds = sentRequestsSnap.docs.map(doc => doc.data().receiverId);
 
-            if (results.length === 0) {
-                resultsContainer.innerHTML = '<p class="text-gray-400">No operatives found.</p>';
-            } else {
-                results.slice(0, 5).forEach(user => {
-                    const isFriend = userData.friends?.includes(user.id);
-                    const sentRequest = userData.friendRequests?.sent?.includes(user.id);
-                    const receivedRequest = userData.friendRequests?.received?.includes(user.id);
+                if (results.length === 0) {
+                    resultsContainer.innerHTML = '<p class="text-gray-400">No operatives found.</p>';
+                } else {
+                    results.slice(0, 5).forEach(user => {
+                        const isFriend = userData.friends?.includes(user.id);
+                        const hasSentRequest = sentRequestIds.includes(user.id);
+                        const hasReceivedRequest = incomingRequestsCache.some(req => req.senderId === user.id);
 
-                    let buttonHTML = '';
-                    if (isFriend) {
-                        buttonHTML = `<button class="cyber-button text-sm bg-gray-500/20 text-gray-300 py-1 px-3 rounded-md" disabled>Friends</button>`;
-                    } else if (sentRequest) {
-                        buttonHTML = `<button class="cyber-button text-sm bg-gray-500/20 text-gray-300 py-1 px-3 rounded-md" disabled>Pending</button>`;
-                    } else if (receivedRequest) {
-                        buttonHTML = `<button class="accept-friend-btn cyber-button text-sm bg-green-500/20 text-green-300 py-1 px-3 rounded-md" data-user-id="${user.id}">Accept Request</button>`;
-                    } else {
-                        buttonHTML = `<button class="add-friend-btn cyber-button text-sm bg-cyan-500/20 text-cyan-300 py-1 px-3 rounded-md" data-user-id="${user.id}">Add Friend</button>`;
-                    }
+                        let buttonHTML = '';
+                        if (isFriend) {
+                            buttonHTML = `<button class="cyber-button text-sm bg-gray-500/20 text-gray-300 py-1 px-3 rounded-md" disabled>Friends</button>`;
+                        } else if (hasSentRequest) {
+                            buttonHTML = `<button class="cyber-button text-sm bg-gray-500/20 text-gray-300 py-1 px-3 rounded-md" disabled>Pending</button>`;
+                        } else if (hasReceivedRequest) {
+                            const req = incomingRequestsCache.find(r => r.senderId === user.id);
+                            buttonHTML = `<button class="accept-friend-btn cyber-button text-sm bg-green-500/20 text-green-300 py-1 px-3 rounded-md" data-request-id="${req.id}" data-sender-id="${user.id}">Accept</button>`;
+                        } else {
+                            buttonHTML = `<button class="add-friend-btn cyber-button text-sm bg-cyan-500/20 text-cyan-300 py-1 px-3 rounded-md" data-user-id="${user.id}">Add Friend</button>`;
+                        }
 
-                    const resultEl = document.createElement('div');
-                    resultEl.className = 'cyber-card p-3 rounded-lg flex items-center justify-between';
-                    resultEl.innerHTML = `
-                         <div class="flex items-center gap-3">
-                            <img src="${user.profilePicUrl}" class="w-10 h-10 rounded-full object-cover">
-                            <span class="font-semibold">${user.displayName}</span>
-                        </div>
-                        <div>
-                            <button class="view-profile-btn cyber-button text-sm bg-blue-500/20 text-blue-300 py-1 px-3 rounded-md mr-2" data-user-id="${user.id}">Profile</button>
-                            ${buttonHTML}
-                        </div>
-                    `;
-                    resultsContainer.appendChild(resultEl);
-                });
+                        const resultEl = document.createElement('div');
+                        resultEl.className = 'cyber-card p-3 rounded-lg flex items-center justify-between';
+                        resultEl.innerHTML = `
+                             <div class="flex items-center gap-3">
+                                <img src="${user.profilePicUrl}" class="w-10 h-10 rounded-full object-cover">
+                                <span class="font-semibold">${user.displayName}</span>
+                            </div>
+                            <div>
+                                <button class="view-profile-btn cyber-button text-sm bg-blue-500/20 text-blue-300 py-1 px-3 rounded-md mr-2" data-user-id="${user.id}">Profile</button>
+                                ${buttonHTML}
+                            </div>
+                        `;
+                        resultsContainer.appendChild(resultEl);
+                    });
+                }
+            } catch(e) {
+                console.error("Error during user search: ", e);
+                if (e.code === 'permission-denied') {
+                    showPermissionErrorAlert();
+                }
             }
         }
 
@@ -1420,8 +1466,7 @@
             const userLeague = LEAGUES.slice().reverse().find(l => user.monthlyXP >= l.minXP) || LEAGUES[0];
 
             const currentTierIndex = STUDY_PASS_REWARDS.slice().reverse().findIndex(tier => user.monthlyXP >= tier.xp);
-            const totalTiers = STUDY_PASS_REWARDS.length;
-            const displayTier = currentTierIndex === -1 ? totalTiers : currentTierIndex + 1;
+            const displayTier = currentTierIndex === -1 ? 0 : STUDY_PASS_REWARDS.length - currentTierIndex;
 
             const equippedTitle = SHOP_ITEMS.find(item => item.id === user.equippedTitle && item.type === 'title');
             const titleHTML = equippedTitle ? `<span class="ml-4 text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1 rounded-full">${equippedTitle.name.replace('Title: ', '')}</span>` : '';
@@ -1495,28 +1540,28 @@
             });
 
             // Social Features
-            document.getElementById('user-search-input').addEventListener('keyup', handleUserSearch);
+            document.getElementById('user-search-input').addEventListener('keyup', (e) => handleUserSearch(e));
+
             document.getElementById('social').addEventListener('click', (e) => {
                 const target = e.target.closest('button');
                 if (!target) return;
 
-                if(target.classList.contains('add-friend-btn')) {
+                if (target.classList.contains('add-friend-btn')) {
                     sendFriendRequest(target.dataset.userId);
                 }
-                if(target.classList.contains('accept-friend-btn')) {
-                    acceptFriendRequest(target.dataset.userId);
+                if (target.classList.contains('accept-friend-btn')) {
+                    acceptFriendRequest(target.dataset.requestId, target.dataset.senderId);
                 }
-                 if(target.classList.contains('decline-friend-btn')) {
-                    declineFriendRequest(target.dataset.userId);
+                if (target.classList.contains('decline-friend-btn')) {
+                    declineFriendRequest(target.dataset.requestId);
                 }
-                if(target.classList.contains('view-profile-btn')) {
+                if (target.classList.contains('view-profile-btn')) {
                     renderUserProfileModal(target.dataset.userId);
                 }
             });
             document.getElementById('close-user-profile-modal-btn').addEventListener('click', () => {
                  document.getElementById('user-profile-modal').style.display = 'none';
             });
-
 
             // Avatar Selection
             document.getElementById('profile-avatar-container').addEventListener('click', renderAvatarSelectionModal);
@@ -1546,10 +1591,13 @@
                     e.currentTarget.classList.add('p-3', 'bg-cyan-500/20', 'rounded-lg');
                     document.getElementById('page-title').textContent = e.currentTarget.querySelector('.nav-text').textContent;
                     
+                    if (targetId === 'social') {
+                        setupSocialListeners();
+                        renderSocialPage();
+                    }
                     if (targetId === 'calendar') renderCalendar();
                     if (targetId === 'leagues') renderLeaguesPage();
                     if (targetId === 'leaderboard') renderLeaderboard();
-                    if (targetId === 'social') renderSocialPage();
                     if (targetId === 'profile') renderAchievements(); 
                     if (targetId === 'inventory') renderInventoryPage();
                     if (targetId === 'pass') renderStudyPass();
@@ -1592,3 +1640,4 @@
     </script>
 </body>
 </html>
+
