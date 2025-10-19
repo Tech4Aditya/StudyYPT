@@ -487,7 +487,7 @@
             const botNames = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"];
             const genericAvatars = AVATAR_OPTIONS.filter(a => !a.id.includes('league') && a.id !== 'default');
             
-            for (let i = 0; i < 200; i++) {
+            for (let i = 0; i < 1000; i++) {
                 const name = `${botNames[i % botNames.length]}-${Math.floor(100 + Math.random() * 900)}`;
                 const randomAvatar = genericAvatars[Math.floor(Math.random() * genericAvatars.length)];
                 botsData.push({
