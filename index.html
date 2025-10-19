@@ -967,7 +967,6 @@
             const profileTitleEl = document.getElementById('profile-title');
             const equippedTitle = SHOP_ITEMS.find(item => item.id === userData.equippedTitle && item.type === 'title');
             const titleIconHTML = equippedTitle ? `<i class="fas ${equippedTitle.icon} ${equippedTitle.id === 'title_founder' ? 'founder-title' : 'text-cyan-300'} ml-2"></i>` : '';
-
             
             document.getElementById('header-user-name').innerHTML = `${userData.displayName || 'Operative'}${titleIconHTML}`;
             document.getElementById('dashboard-profile-name').innerHTML = `${userData.displayName || 'Operative'}${titleIconHTML}`;
@@ -1075,9 +1074,17 @@
             allPlayers.forEach((player, index) => {
                 const playerLeague = LEAGUES.slice().reverse().find(l => player.monthlyXP >= l.minXP) || LEAGUES[0];
                 const displayTier = STUDY_PASS_REWARDS.filter(tier => player.monthlyXP >= tier.xp).length;
-                const equippedTitle = SHOP_ITEMS.find(item => item.id === player.equippedTitle && item.type === 'title');
-                const titleIconHTML = equippedTitle ? `<i class="fas ${equippedTitle.icon} ${equippedTitle.id === 'title_founder' ? 'founder-title' : 'text-cyan-400'} ml-2"></i>` : '';
-
+                
+                let titleIconHTML = '';
+                if(player.isBot){
+                    titleIconHTML = `<i class="fas fa-microchip text-gray-500 ml-2"></i>`;
+                } else {
+                    const equippedTitle = SHOP_ITEMS.find(item => item.id === player.equippedTitle && item.type === 'title');
+                    if (equippedTitle) {
+                         titleIconHTML = `<i class="fas ${equippedTitle.icon} ${equippedTitle.id === 'title_founder' ? 'founder-title' : 'text-cyan-400'} ml-2"></i>`;
+                    }
+                }
+               
                 const row = document.createElement('tr');
                 row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20 text-white' : ''}`;
                 row.innerHTML = `
@@ -1713,7 +1720,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                 achEl.innerHTML = `
                     <i class="fas ${achievement.icon} text-3xl text-cyan-400 mb-1"></i>
                     <h5 class="font-semibold text-sm text-white">${achievement.name}</h5>
-                    ${achievement.achieved ? '<span class="text-green-400 font-bold text-xs mt-1 block">Achieved</span>' : ''}
+                    ${achievement.achieved ? '<span class="text-green-400 font-bold text-xs mt-1 block">Achieved!</span>' : ''}
                 `;
                 achievementsContainer.appendChild(achEl);
             });
