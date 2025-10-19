@@ -442,9 +442,9 @@
             { id: 'viper', type: 'avatar', name: 'Viper Avatar', description: 'A sleek, serpentine avatar.', cost: 1000, currency: 'coins' },
             { id: 'apex', type: 'avatar', name: 'Apex Avatar', description: 'Reach the peak of style.', cost: 500, currency: 'sp' },
             { id: 'rebel', type: 'avatar', name: 'Rebel Avatar', description: 'For the operative who walks their own path.', cost: 2500, currency: 'coins' },
-            { id: 'title_cyber_ninja', type: 'title', name: 'Title: Cyber-Ninja', description: 'A title for the swift and silent.', cost: 1000, currency: 'sp' },
-            { id: 'title_quant', type: 'title', name: 'Title: The Quant', description: 'For the master of numbers.', cost: 1500, currency: 'sp' },
-            { id: 'title_physicist', type: 'title', name: 'Title: The Physicist', description: 'For the explorer of reality.', cost: 3000, currency: 'coins' },
+            { id: 'title_cyber_ninja', type: 'title', name: 'Title: Cyber-Ninja', description: 'A title for the swift and silent.', cost: 1000, currency: 'sp', icon: 'fa-user-ninja' },
+            { id: 'title_quant', type: 'title', name: 'Title: The Quant', description: 'For the master of numbers.', cost: 1500, currency: 'sp', icon: 'fa-calculator' },
+            { id: 'title_physicist', type: 'title', name: 'Title: The Physicist', description: 'For the explorer of reality.', cost: 3000, currency: 'coins', icon: 'fa-atom' },
             { id: 'sp_pack_1', type: 'currency', name: '100 SP Pack', description: 'Get 100 SP for 2000 Coins.', cost: 2000, currency: 'coins' },
         ];
         const MOCK_ACHIEVEMENTS = [ 
@@ -456,16 +456,16 @@
             { id: 'mythic_chronomancer', name: 'Mythic Chronomancer', description: 'Log 100 hours of study', icon: 'fa-hourglass-half', achieved: false, rarity: 'Mythic' }
         ];
         const STUDY_PASS_REWARDS = [ 
-            { xp: 0, type: 'coins', value: 50 },
-            { xp: 1000, type: 'sp', value: 30 },
-            { xp: 2500, type: 'avatar', value: 'avatar_rocket' },
-            { xp: 5000, type: 'coins', value: 200 },
-            { xp: 7500, type: 'sp', value: 60 },
-            { xp: 10000, type: 'avatar', value: 'avatar_brain' },
-            { xp: 15000, type: 'coins', value: 400 },
-            { xp: 20000, type: 'avatar', value: 'avatar_atom' },
-            { xp: 25000, type: 'sp', value: 150 },
-            { xp: 35000, type: 'avatar', value: 'avatar_globe' }
+            { xp: 1000, type: 'coins', value: 50 },
+            { xp: 2000, type: 'sp', value: 30 },
+            { xp: 3000, type: 'avatar', value: 'avatar_rocket' },
+            { xp: 4000, type: 'coins', value: 200 },
+            { xp: 5000, type: 'sp', value: 60 },
+            { xp: 6000, type: 'avatar', value: 'avatar_brain' },
+            { xp: 7000, type: 'coins', value: 400 },
+            { xp: 8000, type: 'avatar', value: 'avatar_atom' },
+            { xp: 9000, type: 'sp', value: 150 },
+            { xp: 10000, type: 'avatar', value: 'avatar_globe' }
         ];
         
         // --- FIREBASE & STATE ---
@@ -484,14 +484,18 @@
         function generateBotProfiles() {
             if (botsData.length > 0) return; // Only generate once
             const botNames = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"];
+            const genericAvatars = AVATAR_OPTIONS.filter(a => !a.id.includes('league') && a.id !== 'default');
+            
             for (let i = 0; i < 200; i++) {
                 const name = `${botNames[i % botNames.length]}-${Math.floor(100 + Math.random() * 900)}`;
+                const randomAvatar = genericAvatars[Math.floor(Math.random() * genericAvatars.length)];
                 botsData.push({
                     name: name,
                     uid: `bot_${i}`,
+                    isBot: true,
                     level: Math.floor(1 + Math.random() * 50),
                     monthlyXP: Math.floor(Math.random() * 5000),
-                    profilePicUrl: `https://placehold.co/40x40/1f2937/ffffff?text=${name.charAt(0)}`
+                    profilePicUrl: randomAvatar.url
                 });
             }
         }
@@ -537,6 +541,9 @@
             onSnapshot(usersRef, 
                 (snapshot) => {
                     allUsersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    if (document.getElementById('app-view').classList.contains('hidden')) return;
+                    
+                    if (!document.getElementById('home').classList.contains('hidden')) renderLeaderboard(); // Update rank on dashboard
                     if (!document.getElementById('leaderboard').classList.contains('hidden')) renderLeaderboard();
                     if (!document.getElementById('leagues').classList.contains('hidden')) renderLeaguesPage();
                     if (!document.getElementById('social').classList.contains('hidden')) renderSocialPage();
@@ -919,6 +926,11 @@
 
             const profileTitleEl = document.getElementById('profile-title');
             const equippedTitle = SHOP_ITEMS.find(item => item.id === userData.equippedTitle && item.type === 'title');
+            const titleIconHTML = equippedTitle ? `<i class="fas ${equippedTitle.icon} text-cyan-300 ml-2"></i>` : '';
+            
+            document.getElementById('header-user-name').innerHTML = `${userData.displayName || 'Operative'}${titleIconHTML}`;
+            document.getElementById('dashboard-profile-name').innerHTML = `${userData.displayName || 'Operative'}${titleIconHTML}`;
+            
             if (equippedTitle) {
                 profileTitleEl.textContent = equippedTitle.name.replace('Title: ', '');
                 profileTitleEl.style.display = 'inline-block';
@@ -1022,13 +1034,15 @@
             allPlayers.forEach((player, index) => {
                 const playerLeague = LEAGUES.slice().reverse().find(l => player.monthlyXP >= l.minXP) || LEAGUES[0];
                 const displayTier = STUDY_PASS_REWARDS.filter(tier => player.monthlyXP >= tier.xp).length;
+                const equippedTitle = SHOP_ITEMS.find(item => item.id === player.equippedTitle && item.type === 'title');
+                const titleIconHTML = equippedTitle ? `<i class="fas ${equippedTitle.icon} text-cyan-400 ml-2"></i>` : '';
 
                 const row = document.createElement('tr');
                 row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20 text-white' : ''}`;
                 row.innerHTML = `
                     <td class="p-4 font-bold text-lg font-orbitron">${index + 1}</td>
                     <td class="p-4"><img src="${player.profilePicUrl}" class="w-10 h-10 rounded-full object-cover"></td>
-                    <td class="p-4 font-semibold">${player.displayName || player.name}</td>
+                    <td class="p-4 font-semibold"><div class="flex items-center">${player.displayName || player.name} ${titleIconHTML}</div></td>
                     <td class="p-4"><div class="flex items-center"><img src="${playerLeague.iconUrl}" class="w-6 h-6 mr-2 rounded-full"><span class="${playerLeague.color || ''}">${playerLeague.name}</span></div></td>
                     <td class="p-4 font-orbitron">${displayTier}</td>
                     <td class="p-4 text-cyan-300 font-orbitron">${player.monthlyXP}</td>
@@ -1776,4 +1790,5 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
     </script>
 </body>
 </html>
+
 
