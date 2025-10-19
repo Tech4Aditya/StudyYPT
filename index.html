@@ -506,12 +506,24 @@
             { id: 'sp_pack_1', type: 'currency', name: '100 SP Pack', description: 'Get 100 SP for 2000 Coins.', cost: 2000, currency: 'coins' },
         ];
         const MOCK_ACHIEVEMENTS = [ 
+            // Common
             { id: 'first_mission', name: 'First Mission', description: 'Complete your first task', icon: 'fa-shoe-prints', achieved: false, rarity: 'Common' }, 
             { id: 'task_master', name: 'Task Master', description: 'Complete 10 tasks', icon: 'fa-tasks', achieved: false, rarity: 'Common' },
+            { id: 'first_friend', name: 'Social Operative', description: 'Add your first friend', icon: 'fa-user-friends', achieved: false, rarity: 'Common' },
+            { id: 'first_title', name: 'Callsign Acquired', description: 'Equip a title for the first time', icon: 'fa-id-badge', achieved: false, rarity: 'Common' },
+            { id: 'polymath', name: 'Polymath', description: 'Complete tasks in 3 different subjects', icon: 'fa-brain', achieved: false, rarity: 'Common' },
+            // Rare
             { id: 'level_5', name: 'Ascendant', description: 'Reach Level 5', icon: 'fa-arrow-up', achieved: false, rarity: 'Rare' },
-            { id: 'centurion', name: 'Centurion', description: 'Complete 100 tasks', icon: 'fa-shield-halved', achieved: false, rarity: 'Rare' },
-            { id: 'legendary_scholar', name: 'Legendary Scholar', description: 'Reach Gold League', icon: 'fa-graduation-cap', achieved: false, rarity: 'Legendary' },
-            { id: 'mythic_chronomancer', name: 'Mythic Chronomancer', description: 'Log 100 hours of study', icon: 'fa-hourglass-half', achieved: false, rarity: 'Mythic' }
+            { id: 'task_veteran', name: 'Mission Specialist', description: 'Complete 50 tasks', icon: 'fa-rocket', achieved: false, rarity: 'Rare' },
+            { id: 'study_hours_50', name: 'Dedicated Learner', description: 'Log 50 hours of study', icon: 'fa-clock', achieved: false, rarity: 'Rare' },
+            { id: 'silver_rank', name: 'Silver Tier', description: 'Reach Silver League', icon: 'fa-shield-alt', achieved: false, rarity: 'Rare' },
+            // Legendary
+            { id: 'legendary_scholar', name: 'Golden Scholar', description: 'Reach Gold League', icon: 'fa-graduation-cap', achieved: false, rarity: 'Legendary' },
+            // Mythic
+            { id: 'centurion', name: 'Centurion', description: 'Complete 100 tasks', icon: 'fa-shield-halved', achieved: false, rarity: 'Mythic' },
+            { id: 'mythic_chronomancer', name: 'Mythic Chronomancer', description: 'Log 100 hours of study', icon: 'fa-hourglass-half', achieved: false, rarity: 'Mythic' },
+            { id: 'level_50', name: 'Veteran', description: 'Reach Level 50', icon: 'fa-user-shield', achieved: false, rarity: 'Mythic' },
+            { id: 'legend_rank', name: 'Legendary', description: 'Reach Legend League', icon: 'fa-star', achieved: false, rarity: 'Mythic' }
         ];
         const STUDY_PASS_REWARDS = [ 
             { xp: 1000, type: 'coins', value: 50 },
@@ -673,6 +685,14 @@
                 userData = docSnap.data();
                 let needsSave = false;
 
+                // --- BACKWARDS COMPATIBILITY FOR NEW ACHIEVEMENTS ---
+                const existingAchievementIds = new Set(userData.achievements.map(a => a.id));
+                const newAchievements = MOCK_ACHIEVEMENTS.filter(a => !existingAchievementIds.has(a.id));
+                if (newAchievements.length > 0) {
+                    userData.achievements.push(...newAchievements);
+                    needsSave = true;
+                }
+
                 if (!userData.tasks) {
                     userData.tasks = {};
                     needsSave = true;
@@ -689,6 +709,16 @@
                     userData.totalXP = reconstructedTotalXP;
                     needsSave = true;
                 }
+
+                if (typeof userData.totalHoursStudied !== 'number') {
+                    userData.totalHoursStudied = 0;
+                     Object.values(userData.tasks).flat().filter(t => t.status !== 'pending').forEach(task => {
+                        userData.totalHoursStudied += task.duration;
+                    });
+                    needsSave = true;
+                }
+
+
                 userData.tasksCompletedToday = userData.tasksCompletedToday || 0;
                 userData.seasonHistory = userData.seasonHistory || {};
 
@@ -769,6 +799,7 @@
                 createdAt: new Date().toISOString(),
                 level: 1, xp: 0, coins: 50, sp: 5, monthlyXP: 0,
                 totalXP: 0, 
+                totalHoursStudied: 0,
                 tasks: {}, purchasedItems: [], todayXP: 0, tasksCompletedToday: 0, achievements: MOCK_ACHIEVEMENTS,
                 studyPassProgress: { claimedTiers: [] },
                 friends: [],
@@ -911,20 +942,18 @@
             userData.monthlyXP += xpEarned;
             userData.totalXP = (userData.totalXP || 0) + xpEarned;
             userData.todayXP += xpEarned;
+            userData.totalHoursStudied = (userData.totalHoursStudied || 0) + task.duration;
             
             const xpForNextLevel = Math.floor(Math.pow(userData.level, 1.2) * 100);
             if (userData.xp + xpEarned >= xpForNextLevel && userData.level < 100000) {
                 userData.level++;
                 userData.xp = (userData.xp + xpEarned) - xpForNextLevel;
-                checkAchievements('level_5');
             } else {
                 userData.xp += xpEarned;
             }
 
-            checkAchievements('first_mission');
-            if (Object.values(userData.tasks).flat().filter(t => t.status === 'completed' || t.status === 'partial').length >= 10) {
-                 checkAchievements('task_master');
-            }
+            // Check all achievements after a task is completed
+            checkAllAchievements();
             
             userData.tasksCompletedToday++;
             
@@ -932,6 +961,37 @@
             saveUserData();
         }
         
+        function checkAllAchievements() {
+            const completedTasks = Object.values(userData.tasks).flat().filter(t => t.status === 'completed' || t.status === 'partial');
+            const totalCompleted = completedTasks.length;
+            
+            // Task count achievements
+            if (totalCompleted >= 1) checkAchievements('first_mission');
+            if (totalCompleted >= 10) checkAchievements('task_master');
+            if (totalCompleted >= 50) checkAchievements('task_veteran');
+            if (totalCompleted >= 100) checkAchievements('centurion');
+
+            // Study hours achievements
+            if (userData.totalHoursStudied >= 50) checkAchievements('study_hours_50');
+            if (userData.totalHoursStudied >= 100) checkAchievements('mythic_chronomancer');
+
+            // Level achievements
+            if (userData.level >= 5) checkAchievements('level_5');
+            if (userData.level >= 50) checkAchievements('level_50');
+
+            // League achievements
+            const currentLeague = LEAGUES.slice().reverse().find(l => userData.monthlyXP >= l.minXP) || LEAGUES[0];
+            if (currentLeague.id === 'silver') checkAchievements('silver_rank');
+            if (currentLeague.id === 'gold') checkAchievements('legendary_scholar');
+            if (currentLeague.id === 'legend') checkAchievements('legend_rank');
+
+            // Subject achievement
+            const uniqueSubjects = new Set(completedTasks.map(t => t.subject));
+            if (uniqueSubjects.size >= 3) {
+                checkAchievements('polymath');
+            }
+        }
+
         function checkAchievements(achievementId) {
             const achievement = userData.achievements.find(a => a.id === achievementId);
             if (achievement && !achievement.achieved) {
@@ -1344,6 +1404,7 @@
                     btn.addEventListener('click', async (e) => {
                         const titleId = e.currentTarget.dataset.titleId;
                         userData.equippedTitle = titleId;
+                        checkAchievements('first_title');
                         await saveUserData();
                     });
                 }
@@ -1626,6 +1687,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                         const request = requestDoc.data();
                         const friends = userData.friends || [];
                         if (!friends.includes(request.receiverId)) {
+                            checkAchievements('first_friend');
                             const userRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
                             await updateDoc(userRef, {
                                 friends: arrayUnion(request.receiverId)
@@ -1734,6 +1796,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             if (!auth.currentUser || !requestId || !senderId) return;
 
             try {
+                checkAchievements('first_friend');
                 const currentUserRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
                 await updateDoc(currentUserRef, {
                     friends: arrayUnion(senderId)
@@ -1878,7 +1941,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                 </div>
 
                  <h4 class="text-2xl font-bold mt-6 mb-3 text-white font-orbitron">Achievements</h4>
-                <div id="modal-achievements-container" class="grid grid-cols-3 gap-3"></div>
+                <div id="modal-achievements-container" class="grid grid-cols-5 gap-3"></div>
                 
                  <p class="text-xs text-gray-500 mt-6 text-center">Note: Mission history and daily XP are private and not visible to other operatives.</p>
             `;
@@ -1888,7 +1951,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             const rarityOrder = { 'Mythic': 1, 'Legendary': 2, 'Rare': 3, 'Common': 4 };
             userAchievements.sort((a,b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
 
-             userAchievements.forEach(achievement => {
+             userAchievements.slice(0, 50).forEach(achievement => {
                 const achEl = document.createElement('div');
                 achEl.className = `cyber-card p-3 rounded-lg text-center ${!achievement.achieved ? 'opacity-40 grayscale' : ''}`;
                 achEl.innerHTML = `
