@@ -76,6 +76,7 @@
             border-radius: 3px;
             border: 1px solid rgba(0, 255, 255, 0.5);
         }
+        .friend-options { display: none; }
 
     </style>
 </head>
@@ -608,13 +609,26 @@
                 }
 
                 userData = docSnap.data();
+                let needsSave = false;
+
+                // Backwards compatibility for users who don't have these fields
+                if (typeof userData.totalXP !== 'number') {
+                    let reconstructedTotalXP = 0;
+                    if (userData.seasonHistory) {
+                        Object.values(userData.seasonHistory).forEach(season => {
+                            reconstructedTotalXP += season.xp || 0;
+                        });
+                    }
+                    reconstructedTotalXP += userData.monthlyXP || 0;
+                    userData.totalXP = reconstructedTotalXP;
+                    needsSave = true;
+                }
                 userData.tasksCompletedToday = userData.tasksCompletedToday || 0;
                 userData.seasonHistory = userData.seasonHistory || {};
 
                 const today = new Date().toDateString();
                 const seasonInfo = getSeasonInfo();
 
-                let needsSave = false;
                 if (!userData.lastLoginDate || new Date(userData.lastLoginDate).toDateString() !== today) {
                     userData.todayXP = 0;
                     userData.tasksCompletedToday = 0;
@@ -688,6 +702,7 @@
                 setupComplete: false,
                 createdAt: new Date().toISOString(),
                 level: 1, xp: 0, coins: 50, sp: 5, monthlyXP: 0,
+                totalXP: 0, 
                 tasks: {}, purchasedItems: [], todayXP: 0, tasksCompletedToday: 0, achievements: MOCK_ACHIEVEMENTS,
                 studyPassProgress: { claimedTiers: [] },
                 friends: [],
@@ -779,6 +794,7 @@
             userData.coins += task.coins;
             userData.sp += task.sp;
             userData.monthlyXP += task.xp;
+            userData.totalXP = (userData.totalXP || 0) + task.xp; // Increment total XP
             
             if (taskDate === today) {
                 userData.todayXP += task.xp;
@@ -909,9 +925,9 @@
             document.getElementById('header-user-sp').textContent = userData.sp;
             document.getElementById('level-text').textContent = userData.level;
             
-            document.getElementById('dashboard-today-xp').textContent = userData.todayXP;
-            document.getElementById('dashboard-monthly-xp').textContent = userData.monthlyXP;
-            document.getElementById('dashboard-total-xp').textContent = userData.xp;
+            document.getElementById('dashboard-today-xp').textContent = userData.todayXP || 0;
+            document.getElementById('dashboard-monthly-xp').textContent = userData.monthlyXP || 0;
+            document.getElementById('dashboard-total-xp').textContent = userData.totalXP || 0;
 
             const xpForNextLevel = Math.floor(Math.pow(userData.level, 1.2) * 100);
             const percentage = xpForNextLevel > 0 ? (userData.xp / xpForNextLevel) * 100 : 0;
@@ -1790,5 +1806,6 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
     </script>
 </body>
 </html>
+
 
 
