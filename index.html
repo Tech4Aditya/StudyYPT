@@ -229,7 +229,10 @@
                         </div>
                         <div id="calendar-grid" class="grid grid-cols-7 gap-2 text-center"></div>
                     </div>
-                    <h3 id="calendar-tasks-header" class="text-2xl font-bold text-white font-orbitron mb-4 hidden">Missions for <span id="selected-date-span"></span></h3>
+                    <div id="calendar-task-controls" class="mb-4 text-center hidden">
+                        <h3 class="text-2xl font-bold text-white font-orbitron mb-4">Missions for <span id="selected-date-span"></span></h3>
+                        <button id="calendar-add-task-btn" class="cyber-button text-cyan-300 font-bold py-2 px-4 rounded-lg flex items-center gap-2 mx-auto"><i class="fas fa-plus"></i> Add Mission</button>
+                    </div>
                     <div id="calendar-tasks-container" class="space-y-4"></div>
                 </div>
 
@@ -376,8 +379,10 @@
     
     <div id="add-task-modal" class="modal items-center justify-center">
         <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-md mx-auto modal-content">
-            <h2 class="text-2xl font-bold text-white mb-6 font-orbitron">Add New Mission</h2>
+            <h2 id="task-modal-title" class="text-2xl font-bold text-white mb-6 font-orbitron">Add New Mission</h2>
             <form id="add-task-form" class="space-y-4">
+                 <input type="hidden" id="task-id">
+                 <input type="hidden" id="task-date">
                  <div>
                     <label for="task-title" class="block text-sm font-medium text-cyan-300 mb-1">Mission Title</label>
                     <input type="text" id="task-title" required class="w-full bg-gray-900/50 border border-cyan-300/30 rounded-lg p-2.5 text-white focus:ring-cyan-500 focus:border-cyan-500">
@@ -403,9 +408,21 @@
                 </div>
                 <div class="flex justify-end gap-4 pt-4">
                     <button type="button" id="cancel-add-task-btn" class="bg-gray-600/50 hover:bg-gray-500/50 text-white font-bold py-2 px-6 rounded-lg">Cancel</button>
-                    <button type="submit" class="cyber-button bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 font-bold py-2 px-6 rounded-lg">Add Mission</button>
+                    <button type="submit" id="save-task-btn" class="cyber-button bg-cyan-500/20 hover:bg-cyan-500/40 text-cyan-300 font-bold py-2 px-6 rounded-lg">Add Mission</button>
                 </div>
             </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="modal items-center justify-center">
+        <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-sm mx-auto modal-content">
+            <h2 id="confirm-modal-title" class="text-xl font-bold text-white mb-4 font-orbitron">Confirm Action</h2>
+            <p id="confirm-modal-text" class="text-gray-300 mb-6"></p>
+            <div class="flex justify-end gap-4">
+                <button id="confirm-modal-cancel" class="bg-gray-600/50 hover:bg-gray-500/50 text-white font-bold py-2 px-6 rounded-lg">Cancel</button>
+                <button id="confirm-modal-confirm" class="cyber-button bg-red-500/20 border-red-400 text-red-300 font-bold py-2 px-6 rounded-lg">Confirm</button>
+            </div>
         </div>
     </div>
 
@@ -498,6 +515,7 @@
         let socialListeners = [];
         let allUsersListenerAttached = false;
         let botsData = [];
+        let confirmCallback = null; // For the custom confirmation modal
 
         // --- BOT GENERATION ---
         function generateBotProfiles() {
@@ -563,22 +581,19 @@
             });
         }
         
-        async function fetchAllUsers() {
+        function fetchAllUsers() {
             const usersRef = collection(db, `artifacts/${appId}/public/data/profiles`);
-            onSnapshot(usersRef, 
-                (snapshot) => {
-                    allUsersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    if (document.getElementById('app-view').classList.contains('hidden')) return;
-                    
-                    if (!document.getElementById('home').classList.contains('hidden')) renderLeaderboard(); // Update rank on dashboard
-                    if (!document.getElementById('leaderboard').classList.contains('hidden')) renderLeaderboard();
-                    if (!document.getElementById('leagues').classList.contains('hidden')) renderLeaguesPage();
-                    if (!document.getElementById('social').classList.contains('hidden')) renderSocialPage();
-                },
-                (error) => {
-                    console.error("Error fetching all users:", error);
+            const unsub = onSnapshot(usersRef, (snapshot) => {
+                allUsersCache = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                if (userData) { // Only update UI if the main user data is also loaded
+                    updateUI();
                 }
-            );
+            }, (error) => {
+                console.error("Error fetching all users:", error);
+                if (error.code === 'permission-denied') {
+                    showConfirmModal("Could not load player data due to a permissions issue. Leaderboard and social features will be limited.", null, true);
+                }
+            });
         }
         
         async function signOutUser() {
@@ -587,7 +602,6 @@
                 console.log("User signed out successfully.");
             } catch (error) {
                 console.error("Sign out failed:", error);
-                alert("Sign out failed: " + error.message);
             }
         }
 
@@ -611,7 +625,7 @@
                 }
             } catch (error) {
                 console.error("Auth error:", error);
-                alert(`Authentication failed: ${error.message}`);
+                showConfirmModal(`Authentication failed: ${error.message}`, null, true);
             }
         }
 
@@ -637,7 +651,11 @@
                 userData = docSnap.data();
                 let needsSave = false;
 
-                // Backwards compatibility for users who don't have these fields
+                if (!userData.tasks) {
+                    userData.tasks = {};
+                    needsSave = true;
+                }
+
                 if (typeof userData.totalXP !== 'number') {
                     let reconstructedTotalXP = 0;
                     if (userData.seasonHistory) {
@@ -663,7 +681,6 @@
                 }
 
                 if (userData.lastSeasonId && userData.lastSeasonId !== seasonInfo.id) {
-                    // Save last season's data before resetting
                     const lastSeasonXP = userData.monthlyXP || 0;
                     const lastSeasonLeague = LEAGUES.slice().reverse().find(l => lastSeasonXP >= l.minXP) || LEAGUES[0];
                     userData.seasonHistory[userData.lastSeasonId] = {
@@ -671,7 +688,6 @@
                         league: lastSeasonLeague.name
                     };
                     
-                    // Reset for new season
                     userData.monthlyXP = 0;
                     userData.studyPassProgress = { claimedTiers: [] };
                     needsSave = true;
@@ -700,7 +716,7 @@
             e.preventDefault();
             const displayName = document.getElementById('setup-display-name').value;
             if (!displayName.trim()) {
-                alert("Please enter a display name.");
+                console.error("Display name is empty.");
                 return;
             }
             
@@ -710,7 +726,7 @@
                 userData.setupComplete = true; 
                 await saveUserData();
             } catch (error) {
-                alert(`Setup failed: ${error.message}`);
+                console.error(`Setup failed: ${error.message}`);
             }
         }
 
@@ -748,9 +764,13 @@
 
         async function saveUserData() {
             if (!auth.currentUser || !userData) return;
-            const userRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
-            await setDoc(userRef, userData, { merge: true });
-            await updatePublicProfile(userData);
+            try {
+                const userRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
+                await setDoc(userRef, userData, { merge: true });
+                await updatePublicProfile(userData);
+            } catch (error) {
+                console.error("Error saving user data:", error);
+            }
         }
         
         async function updatePublicProfile(data) {
@@ -779,18 +799,45 @@
             return `${year}-${month}-${day}`;
         }
 
-        function addTask(title, duration, subject) {
-            const today = getTodayDateString();
-            if(!userData.tasks[today]) {
-                userData.tasks[today] = [];
+        function addTask(title, duration, subject, dateString) {
+            const targetDate = dateString || getTodayDateString();
+            if(!userData.tasks[targetDate]) {
+                userData.tasks[targetDate] = [];
             }
 
             const hours = parseFloat(duration); if (isNaN(hours) || hours <= 0) return;
             let xp = (hours === 1) ? 30 : 30 + (hours - 1) * 20;
             const coins = Math.ceil(xp / 2);
             const sp = Math.ceil(xp / 10);
-            userData.tasks[today].push({ id: `task_${Date.now()}`, title, duration: hours, subject, xp, coins, sp, completed: false });
+            userData.tasks[targetDate].push({ id: `task_${Date.now()}`, title, duration: hours, subject, xp, coins, sp, status: 'pending' });
             saveUserData();
+        }
+
+        function updateTask(taskId, taskDate, updates) {
+            if (!userData.tasks[taskDate]) return;
+            const taskIndex = userData.tasks[taskDate].findIndex(t => t.id === taskId);
+            if (taskIndex > -1) {
+                const task = userData.tasks[taskDate][taskIndex];
+                task.title = updates.title;
+                task.duration = parseFloat(updates.duration);
+                task.subject = updates.subject;
+                
+                let xp = (task.duration === 1) ? 30 : 30 + (task.duration - 1) * 20;
+                task.xp = xp;
+                task.coins = Math.ceil(xp / 2);
+                task.sp = Math.ceil(xp / 10);
+
+                saveUserData();
+            }
+        }
+
+        function deleteTask(taskId, taskDate) {
+            if (!userData.tasks[taskDate]) return;
+            const taskIndex = userData.tasks[taskDate].findIndex(t => t.id === taskId);
+            if (taskIndex > -1) {
+                userData.tasks[taskDate].splice(taskIndex, 1);
+                saveUserData();
+            }
         }
 
         async function updatePublicActivity(duration) {
@@ -804,48 +851,61 @@
                 }, { merge: true });
             } catch (e) {
                 console.error("Error updating public activity:", e);
-                // This might fail if rules aren't set up, but we won't alert for this non-critical feature.
             }
         }
 
-        function completeTask(taskId, taskDate) {
+        function completeTask(taskId, taskDate, completionStatus) {
             const today = getTodayDateString();
-            if (taskDate === today && userData.tasksCompletedToday >= 20) {
-                alert("You have reached the daily limit of 20 completed tasks. Come back tomorrow!");
+            if (taskDate !== today) {
+                console.error("Attempted to complete a task not for today.");
+                return;
+            }
+
+            if (userData.tasksCompletedToday >= 20) {
+                showConfirmModal("You have reached the daily limit of 20 completed tasks. Come back tomorrow!", null, true);
                 return;
             }
 
             if (!userData.tasks[taskDate]) return;
             const task = userData.tasks[taskDate].find(t => t.id === taskId);
 
-            if (!task || task.completed) return;
-            task.completed = true;
-            userData.coins += task.coins;
-            userData.sp += task.sp;
-            userData.monthlyXP += task.xp;
-            userData.totalXP = (userData.totalXP || 0) + task.xp; // Increment total XP
+            if (!task || task.status !== 'pending') return;
             
-            if (taskDate === today) {
-                userData.todayXP += task.xp;
+            let xpEarned = task.xp;
+            let coinsEarned = task.coins;
+            let spEarned = task.sp;
+
+            if (completionStatus === 'partial') {
+                xpEarned = Math.floor(task.xp / 2);
+                coinsEarned = Math.floor(task.coins / 2);
+                spEarned = Math.floor(task.sp / 2);
+                task.status = 'partial';
+            } else { // 'completed'
+                task.status = 'completed';
             }
+
+            userData.coins += coinsEarned;
+            userData.sp += spEarned;
+            userData.monthlyXP += xpEarned;
+            userData.totalXP = (userData.totalXP || 0) + xpEarned;
+            userData.todayXP += xpEarned;
             
             const xpForNextLevel = Math.floor(Math.pow(userData.level, 1.2) * 100);
-            if (userData.xp + task.xp >= xpForNextLevel && userData.level < 100000) {
+            if (userData.xp + xpEarned >= xpForNextLevel && userData.level < 100000) {
                 userData.level++;
-                userData.xp = (userData.xp + task.xp) - xpForNextLevel;
+                userData.xp = (userData.xp + xpEarned) - xpForNextLevel;
                 checkAchievements('level_5');
             } else {
-                userData.xp += task.xp;
+                userData.xp += xpEarned;
             }
 
             checkAchievements('first_mission');
-            if (Object.values(userData.tasks).flat().filter(t => t.completed).length >= 10) {
+            if (Object.values(userData.tasks).flat().filter(t => t.status === 'completed' || t.status === 'partial').length >= 10) {
                  checkAchievements('task_master');
             }
             
-            if (taskDate === today) {
-                userData.tasksCompletedToday++;
-            }
+            userData.tasksCompletedToday++;
+            
             updatePublicActivity(task.duration);
             saveUserData();
         }
@@ -854,7 +914,7 @@
             const achievement = userData.achievements.find(a => a.id === achievementId);
             if (achievement && !achievement.achieved) {
                 achievement.achieved = true;
-                alert(`Achievement Unlocked: ${achievement.name}!`);
+                showConfirmModal(`Achievement Unlocked: ${achievement.name}!`, null, true);
             }
         }
 
@@ -863,11 +923,9 @@
             const tier = STUDY_PASS_REWARDS[tierIndex];
             if (!tier) return;
             if (userData.monthlyXP < tier.xp) {
-                alert("You haven't reached this tier yet!");
                 return;
             }
             if (userData.studyPassProgress.claimedTiers.includes(tierIndex)) {
-                alert("You've already claimed this reward!");
                 return;
             }
 
@@ -887,7 +945,7 @@
 
             userData.studyPassProgress.claimedTiers.push(tierIndex);
             saveUserData();
-            alert(`Reward claimed: ${rewardMessage}!`);
+            showConfirmModal(`Reward claimed: ${rewardMessage}!`, null, true);
         }
 
         function purchaseShopItem(itemId) {
@@ -895,12 +953,11 @@
             if (!item) return;
 
             if (item.currency === 'coins' && userData.coins < item.cost) {
-                alert("Not enough coins!"); return;
+                showConfirmModal("Not enough coins!", null, true); return;
             }
             if (item.currency === 'sp' && userData.sp < item.cost) {
-                alert("Not enough Study Points!"); return;
+                showConfirmModal("Not enough Study Points!", null, true); return;
             }
-
             if (item.currency === 'coins') userData.coins -= item.cost;
             if (item.currency === 'sp') userData.sp -= item.cost;
             
@@ -917,7 +974,7 @@
                 userData.sp += 100; // Hardcoded for sp_pack_1
             }
 
-            alert(purchasedMessage);
+            showConfirmModal(purchasedMessage, null, true);
             saveUserData();
         }
 
@@ -945,7 +1002,7 @@
             checkAndUnlockLeagueAvatars();
 
             const currentLeague = LEAGUES.slice().reverse().find(l => userData.monthlyXP >= l.minXP) || LEAGUES[0];
-            const pfpUrl = userData.profilePicUrl || `https://placehold.co/128x128/01040a/00ffff?text=${userData.displayName ? userData.displayName.charAt(0).toUpperCase() : '?'}`;
+            const pfpUrl = userData.profilePicUrl || `https://placehold.co/128x128/01040a/00ffff?text=${(userData.displayName || '?').charAt(0).toUpperCase()}`;
             const seasonInfo = getSeasonInfo();
 
             document.getElementById('header-user-name').textContent = userData.displayName || 'Operative';
@@ -989,7 +1046,6 @@
                 profileTitleEl.style.display = 'none';
             }
 
-            // Dashboard Pass UI Update
             document.getElementById('dashboard-season-number').textContent = seasonInfo.number;
             const unlockedTiersCount = STUDY_PASS_REWARDS.filter(tier => userData.monthlyXP >= tier.xp).length;
             document.getElementById('dashboard-pass-tier').textContent = unlockedTiersCount;
@@ -1009,13 +1065,24 @@
             document.getElementById('dashboard-pass-progress').style.width = `${passProgressPercent}%`;
             document.getElementById('dashboard-pass-xp-text').textContent = passXpText;
 
-
-            renderTasks();
-            renderShop();
-            renderStudyPass();
-            renderAchievements();
+            const activePage = document.querySelector('.page:not(.hidden)');
+            if (activePage) {
+                switch(activePage.id) {
+                    case 'home': renderTasks(); break;
+                    case 'calendar': renderCalendar(); break;
+                    case 'leagues': renderLeaguesPage(); break;
+                    case 'leaderboard': renderLeaderboard(); break;
+                    case 'profile': renderAchievements(); renderSeasonHistory(); break;
+                    case 'inventory': renderInventoryPage(); break;
+                    case 'pass': renderStudyPass(); break;
+                    case 'shop': renderShop(); break;
+                }
+            } else {
+                renderTasks(); 
+            }
+            
             updateDailyQuote();
-            renderLeaderboard(); // Call this to update dashboard rank
+            renderLeaderboard();
         }
         
         function renderTasks(dateString) {
@@ -1023,95 +1090,152 @@
             const targetDate = dateString || today;
             const container = dateString ? document.getElementById('calendar-tasks-container') : document.getElementById('daily-tasks-container');
 
-            if (!container || !userData.tasks) return;
+            if (!container || !userData || !userData.tasks) return;
             const tasksForDay = userData.tasks[targetDate] || [];
 
             container.innerHTML = tasksForDay.length === 0 ? `<div class="text-center text-gray-400 p-8 cyber-card rounded-lg">No missions for this day.</div>` : '';
             tasksForDay.forEach(task => {
                 const el = document.createElement('div');
-                el.className = `cyber-card p-4 rounded-lg flex items-center justify-between transition-all duration-300 ${task.completed ? 'opacity-40' : 'hover:border-cyan-400'}`;
+                el.className = `cyber-card p-4 rounded-lg flex items-center justify-between transition-all duration-300 ${task.status !== 'pending' ? 'opacity-40' : 'hover:border-cyan-400'}`;
+                
+                const isCompletable = task.status === 'pending' && targetDate === today;
+                const isEditable = task.status === 'pending';
+                let actionButtonsHTML = '';
+
+                if (isCompletable) {
+                    actionButtonsHTML = `
+                        <button class="task-edit-btn cyber-button text-blue-300 p-2 rounded-lg text-sm" data-task-id="${task.id}" data-task-date="${targetDate}" title="Edit"><i class="fas fa-pencil-alt pointer-events-none"></i></button>
+                        <button class="task-partial-btn cyber-button text-yellow-300 p-2 rounded-lg text-sm" data-task-id="${task.id}" data-task-date="${targetDate}" title="Partially Complete"><i class="fas fa-adjust pointer-events-none"></i></button>
+                        <button class="task-full-btn cyber-button text-green-300 p-2 rounded-lg text-sm" data-task-id="${task.id}" data-task-date="${targetDate}" title="Fully Complete"><i class="fas fa-check pointer-events-none"></i></button>
+                        <button class="task-delete-btn cyber-button text-red-300 p-2 rounded-lg text-sm" data-task-id="${task.id}" data-task-date="${targetDate}" title="Delete"><i class="fas fa-trash pointer-events-none"></i></button>
+                    `;
+                } else if (isEditable) {
+                    actionButtonsHTML = `
+                        <button class="task-edit-btn cyber-button text-blue-300 p-2 rounded-lg text-sm" data-task-id="${task.id}" data-task-date="${targetDate}" title="Edit"><i class="fas fa-pencil-alt pointer-events-none"></i></button>
+                        <button class="task-delete-btn cyber-button text-red-300 p-2 rounded-lg text-sm" data-task-id="${task.id}" data-task-date="${targetDate}" title="Delete"><i class="fas fa-trash pointer-events-none"></i></button>
+                    `;
+                } else {
+                    let statusText, statusIcon, statusColor;
+
+                    switch(task.status) {
+                        case 'partial':
+                            statusText = 'Partial';
+                            statusIcon = 'fa-adjust';
+                            statusColor = 'text-yellow-400';
+                            break;
+                        case 'completed':
+                            statusText = 'Completed';
+                            statusIcon = 'fa-check-circle';
+                            statusColor = 'text-green-400';
+                            break;
+                        default:
+                            statusText = 'Status Unknown';
+                            if(typeof task.status === 'string' && task.status) {
+                                statusText = task.status.charAt(0).toUpperCase() + task.status.slice(1);
+                            }
+                            statusIcon = 'fa-question-circle';
+                            statusColor = 'text-gray-400';
+                            break;
+                    }
+                    actionButtonsHTML = `<span class="${statusColor} font-bold"><i class="fas ${statusIcon} mr-2"></i>${statusText}</span>`;
+                }
+
                 el.innerHTML = `
-                    <div>
-                        <h4 class="font-bold text-lg text-white">${task.title}</h4>
+                    <div class="flex-1 min-w-0">
+                        <h4 class="font-bold text-lg text-white truncate">${task.title || 'Untitled Mission'}</h4>
                         <div class="flex items-center gap-2 mt-1">
-                            <span class="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full">${task.subject}</span>
+                            <span class="text-xs bg-cyan-500/20 text-cyan-300 px-2 py-0.5 rounded-full">${task.subject || 'General'}</span>
                             <span class="text-sm text-gray-400">${task.duration}hr mission</span>
                         </div>
                     </div>
-                    <div class="text-right font-orbitron">
+                    <div class="text-right font-orbitron mx-4 flex-shrink-0">
                         <p class="font-semibold text-cyan-300">+${task.xp} XP</p>
                         <p class="font-semibold text-yellow-400">+${task.coins} C / <span class="text-purple-400">+${task.sp} SP</span></p>
                     </div>
-                    <button class="task-complete-btn ml-6 cyber-button text-white font-bold py-2 px-4 rounded-lg ${task.completed ? 'bg-gray-600/50 border-gray-500' : 'bg-green-500/20 border-green-400'}" data-task-id="${task.id}" data-task-date="${targetDate}" ${task.completed ? 'disabled' : ''}>
-                        ${task.completed ? '<i class="fas fa-check"></i>' : 'Complete'}
-                    </button>`;
+                    <div class="flex items-center gap-2 flex-shrink-0">${actionButtonsHTML}</div>
+                `;
                 container.appendChild(el);
             });
-             document.querySelectorAll('.task-complete-btn').forEach(btn => btn.addEventListener('click', (e) => completeTask(e.currentTarget.dataset.taskId, e.currentTarget.dataset.taskDate)));
         }
 
         function renderLeaderboard() {
-            const container = document.getElementById('leaderboard-body');
-            const rankEl = document.getElementById('dashboard-rank');
-            if (!container) return;
+            try {
+                const container = document.getElementById('leaderboard-body');
+                const rankEl = document.getElementById('dashboard-rank');
+                if (!container || !allUsersCache) return;
 
-            const usersFromDB = [...allUsersCache];
+                const usersFromDB = [...allUsersCache];
 
-            botsData.forEach((bot, index) => {
-                const lastUpdate = localStorage.getItem(`bot_update_${bot.name}`);
-                const today = new Date().toDateString();
-                if (lastUpdate !== today) {
-                     let dailyGain;
-                    if (index < 500) { // 50% are less competitive
-                        dailyGain = Math.floor(Math.random() * (120 - 50 + 1)) + 50; // 50-120 XP
-                    } else { // 50% are more competitive
-                        dailyGain = Math.floor(Math.random() * (200 - 120 + 1)) + 120; // 120-200 XP
+                botsData.forEach((bot, index) => {
+                    const lastUpdate = localStorage.getItem(`bot_update_${bot.name}`);
+                    const today = new Date().toDateString();
+                    if (lastUpdate !== today) {
+                        let dailyGain;
+                        if (index < 500) { 
+                            dailyGain = Math.floor(Math.random() * (120 - 50 + 1)) + 50;
+                        } else {
+                            dailyGain = Math.floor(Math.random() * (200 - 120 + 1)) + 120;
+                        }
+                        bot.monthlyXP += dailyGain;
+                        bot.monthlyXP = Math.min(bot.monthlyXP, 5000);
+                        if (Math.random() > 0.8) bot.level += 1;
+                        localStorage.setItem(`bot_update_${bot.name}`, today);
                     }
-                    bot.monthlyXP += dailyGain;
-                    bot.monthlyXP = Math.min(bot.monthlyXP, 5000); // Cap XP at 5000
-                    if (Math.random() > 0.8) bot.level += 1;
-                    localStorage.setItem(`bot_update_${bot.name}`, today);
-                }
-            });
-            
-            const allPlayers = [...usersFromDB, ...botsData];
-            allPlayers.sort((a, b) => b.monthlyXP - a.monthlyXP);
-            
-            const userRank = allPlayers.findIndex(p => p.uid === auth.currentUser?.uid) + 1;
-            if(rankEl && userRank > 0) rankEl.textContent = `#${userRank}`;
-            else if (rankEl) rankEl.textContent = 'N/A';
-
-            container.innerHTML = '';
-            allPlayers.forEach((player, index) => {
-                const playerLeague = LEAGUES.slice().reverse().find(l => player.monthlyXP >= l.minXP) || LEAGUES[0];
-                const displayTier = STUDY_PASS_REWARDS.filter(tier => player.monthlyXP >= tier.xp).length;
-                let titleIconHTML = '';
-                if(player.isBot){
-                    titleIconHTML = `<i class="fas fa-microchip text-gray-500 ml-2"></i>`;
-                } else {
-                    const equippedTitle = SHOP_ITEMS.find(item => item.id === player.equippedTitle && item.type === 'title');
-                    if (equippedTitle) {
-                         titleIconHTML = `<i class="fas ${equippedTitle.icon} ${equippedTitle.id === 'title_founder' ? 'founder-title' : 'text-cyan-400'} ml-2"></i>`;
+                });
+                
+                const allPlayers = [...usersFromDB, ...botsData];
+                allPlayers.sort((a, b) => (b.monthlyXP || 0) - (a.monthlyXP || 0));
+                
+                if (auth.currentUser) {
+                    const userRank = allPlayers.findIndex(p => p.uid === auth.currentUser.uid || p.id === auth.currentUser.uid) + 1;
+                    if(rankEl) {
+                        rankEl.textContent = userRank > 0 ? `#${userRank}`: 'N/A';
                     }
+                } else if(rankEl) {
+                    rankEl.textContent = 'N/A';
                 }
-               
-                const row = document.createElement('tr');
-                row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20 text-white' : ''}`;
-                row.innerHTML = `
-                    <td class="p-4 font-bold text-lg font-orbitron">${index + 1}</td>
-                    <td class="p-4"><img src="${player.profilePicUrl}" class="w-10 h-10 rounded-full object-cover"></td>
-                    <td class="p-4 font-semibold"><div class="flex items-center">${player.displayName || player.name} ${titleIconHTML}</div></td>
-                    <td class="p-4"><div class="flex items-center"><img src="${playerLeague.iconUrl}" class="w-6 h-6 mr-2 rounded-full"><span class="${playerLeague.color || ''}">${playerLeague.name}</span></div></td>
-                    <td class="p-4 font-orbitron">${displayTier}</td>
-                    <td class="p-4 text-cyan-300 font-orbitron">${player.monthlyXP}</td>
-                    <td class="p-4 font-orbitron">${player.level}</td>`;
-                container.appendChild(row);
-            });
+
+                container.innerHTML = '';
+                allPlayers.slice(0, 100).forEach((player, index) => {
+                    if (!player.displayName && !player.name) return;
+
+                    const playerLeague = LEAGUES.slice().reverse().find(l => (player.monthlyXP || 0) >= l.minXP) || LEAGUES[0];
+                    const displayTier = STUDY_PASS_REWARDS.filter(tier => (player.monthlyXP || 0) >= tier.xp).length;
+                    let titleIconHTML = '';
+                    if(player.isBot){
+                        titleIconHTML = `<i class="fas fa-microchip text-gray-500 ml-2"></i>`;
+                    } else {
+                        const equippedTitle = SHOP_ITEMS.find(item => item.id === player.equippedTitle && item.type === 'title');
+                        if (equippedTitle) {
+                            titleIconHTML = `<i class="fas ${equippedTitle.icon} ${equippedTitle.id === 'title_founder' ? 'founder-title' : 'text-cyan-400'} ml-2"></i>`;
+                        }
+                    }
+                    
+                    const row = document.createElement('tr');
+                    const isCurrentUser = auth.currentUser && (player.uid === auth.currentUser.uid || player.id === auth.currentUser.uid);
+                    row.className = `border-b border-cyan-300/10 ${isCurrentUser ? 'bg-cyan-500/20 text-white' : ''}`;
+                    row.innerHTML = `
+                        <td class="p-4 font-bold text-lg font-orbitron">${index + 1}</td>
+                        <td class="p-4"><img src="${player.profilePicUrl || ''}" class="w-10 h-10 rounded-full object-cover"></td>
+                        <td class="p-4 font-semibold"><div class="flex items-center">${player.displayName || player.name} ${titleIconHTML}</div></td>
+                        <td class="p-4"><div class="flex items-center"><img src="${playerLeague.iconUrl}" class="w-6 h-6 mr-2 rounded-full"><span>${playerLeague.name}</span></div></td>
+                        <td class="p-4 font-orbitron">${displayTier}</td>
+                        <td class="p-4 text-cyan-300 font-orbitron">${player.monthlyXP || 0}</td>
+                        <td class="p-4 font-orbitron">${player.level || 1}</td>`;
+                    container.appendChild(row);
+                });
+            } catch (error) {
+                console.error("Failed to render leaderboard:", error);
+            }
         }
         
         function renderLeaguesPage() {
             const container = document.getElementById('leagues-container');
-            if (!container || !userData) return;
+            if (!container) return;
+            if (!userData || !allUsersCache) {
+                container.innerHTML = '<div class="text-center text-gray-400 p-8 cyber-card rounded-lg col-span-full">Loading league data...</div>';
+                return;
+            }
 
             const allPlayers = [...allUsersCache, ...botsData];
             
@@ -1119,10 +1243,11 @@
             LEAGUES.forEach((league, index) => {
                 const nextLeague = LEAGUES[index + 1];
                 const playersInLeague = allPlayers.filter(p => {
+                    const xp = p.monthlyXP || 0;
                     if(nextLeague) {
-                        return p.monthlyXP >= league.minXP && p.monthlyXP < nextLeague.minXP;
+                        return xp >= league.minXP && xp < nextLeague.minXP;
                     }
-                    return p.monthlyXP >= league.minXP;
+                    return xp >= league.minXP;
                 }).length;
 
                 const isCurrentLeague = userData.monthlyXP >= league.minXP && (!nextLeague || userData.monthlyXP < nextLeague.minXP);
@@ -1205,7 +1330,7 @@
             if (!container || !userData) return;
             container.innerHTML = '';
             SHOP_ITEMS.forEach(item => {
-                if (item.hidden) return; // Don't show hidden items in the shop
+                if (item.hidden) return; 
                 const isOwned = (item.type === 'avatar' && userData.unlockedAvatars.includes(item.id)) || (item.type === 'title' && userData.unlockedTitles.includes(item.id));
                 const itemEl = document.createElement('div');
                 const currencyIcon = item.currency === 'sp' ? 'fa-database' : 'fa-coins';
@@ -1302,7 +1427,7 @@
             };
 
             const history = userData.seasonHistory;
-            const seasonIds = Object.keys(history).sort().reverse(); // Show latest season first
+            const seasonIds = Object.keys(history).sort().reverse();
 
             if (seasonIds.length === 0) {
                 container.innerHTML = '<p class="text-gray-400">No season history available.</p>';
@@ -1336,7 +1461,7 @@
             const today = new Date().toDateString();
             if (userData && userData.lastQuoteDate === today && userData.currentQuoteText) {
                 document.getElementById('quote-text').textContent = userData.currentQuoteText;
-                document.getElementById('quote-author').textContent = userData.currentQuoteAuthor;
+                document.getElementById('quote-author').textContent = `- ${userData.currentQuoteAuthor}`;
                 return;
             }
 
@@ -1384,9 +1509,9 @@
         function renderCalendar() {
             const grid = document.getElementById('calendar-grid');
             const header = document.getElementById('month-year-header');
-            if (!grid || !header) return;
+            if (!grid || !header || !userData) return;
 
-            grid.innerHTML = ''; // Clear previous
+            grid.innerHTML = ''; 
             const month = currentCalendarDate.getMonth();
             const year = currentCalendarDate.getFullYear();
             
@@ -1395,7 +1520,6 @@
             const firstDay = new Date(year, month, 1).getDay();
             const daysInMonth = new Date(year, month + 1, 0).getDate();
 
-            // Add weekday headers
             ['S', 'M', 'T', 'W', 'T', 'F', 'S'].forEach(day => {
                 grid.innerHTML += `<div class="font-bold text-cyan-300">${day}</div>`;
             });
@@ -1414,9 +1538,25 @@
                 dayEl.className = `p-2 rounded-full cursor-pointer hover:bg-cyan-500/20 ${isToday ? 'bg-cyan-500/30 font-bold' : ''} ${hasTasks ? 'border border-cyan-400' : ''}`;
                 dayEl.dataset.date = dateString;
                 dayEl.addEventListener('click', () => {
-                    document.getElementById('calendar-tasks-header').classList.remove('hidden');
-                    document.getElementById('selected-date-span').textContent = new Date(dateString + 'T00:00:00').toLocaleDateString();
-                    renderTasks(dateString);
+                    const selectedDate = dayEl.dataset.date;
+                    const dateObj = new Date(selectedDate + 'T00:00:00');
+                    const todayObj = new Date();
+                    todayObj.setHours(0, 0, 0, 0);
+                    
+                    document.querySelectorAll('#calendar-grid > div[data-date]').forEach(d => d.classList.remove('bg-cyan-500/40'));
+                    dayEl.classList.add('bg-cyan-500/40');
+
+                    document.getElementById('calendar-task-controls').classList.remove('hidden');
+
+                    if (dateObj >= todayObj) {
+                        document.getElementById('calendar-add-task-btn').classList.remove('hidden');
+                        document.getElementById('calendar-add-task-btn').dataset.date = selectedDate;
+                    } else {
+                        document.getElementById('calendar-add-task-btn').classList.add('hidden');
+                    }
+                    
+                    document.getElementById('selected-date-span').textContent = dateObj.toLocaleDateString();
+                    renderTasks(selectedDate);
                 });
                 grid.appendChild(dayEl);
             }
@@ -1429,7 +1569,8 @@
 match /artifacts/{appId}/public/data/friend_requests/{requestId} {
     allow read, create, update, delete: if request.auth != null;
 }`;
-            alert("Firestore Permission Error: The social features require a security rule update.\nPlease add the following rule to your Firestore project to allow friend requests:\n" + rule);
+            showConfirmModal("Firestore Permission Error: The social features require a security rule update. See console for details.", null, true);
+            console.warn("Please add the following rule to your Firestore project to allow friend requests:\n" + rule);
         }
         
         function setupSocialListeners() {
@@ -1522,7 +1663,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                             </div>
                              <div>
                                 <button class="view-profile-btn cyber-button text-sm bg-cyan-500/20 text-cyan-300 py-1 px-3 rounded-md" data-user-id="${user.id}">View Profile</button>
-                             </div>
+                            </div>
                         `;
                         friendsContainer.appendChild(friendEl);
                     }
@@ -1542,7 +1683,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                 const existingRequest = await getDocs(q);
 
                 if (!existingRequest.empty) {
-                    alert("You have already sent a friend request to this user.");
+                    showConfirmModal("You have already sent a friend request to this user.", null, true);
                     return;
                 }
 
@@ -1554,14 +1695,12 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                     status: 'pending',
                     createdAt: serverTimestamp()
                 });
-                alert('Friend request sent!');
+                showConfirmModal('Friend request sent!', null, true);
                 handleUserSearch({ target: document.getElementById('user-search-input') });
             } catch(e) {
                 console.error("Error sending friend request: ", e);
                 if (e.code === 'permission-denied') {
                     showPermissionErrorAlert();
-                } else {
-                    alert("Could not send friend request.");
                 }
             }
         }
@@ -1641,8 +1780,8 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                         resultEl.className = 'cyber-card p-3 rounded-lg flex items-center justify-between';
                         resultEl.innerHTML = `
                              <div class="flex items-center gap-3">
-                                <img src="${user.profilePicUrl}" class="w-10 h-10 rounded-full object-cover">
-                                <span class="font-semibold">${user.displayName}</span>
+                                 <img src="${user.profilePicUrl}" class="w-10 h-10 rounded-full object-cover">
+                                 <span class="font-semibold">${user.displayName}</span>
                             </div>
                             <div>
                                 <button class="view-profile-btn cyber-button text-sm bg-blue-500/20 text-blue-300 py-1 px-3 rounded-md mr-2" data-user-id="${user.id}">Profile</button>
@@ -1716,7 +1855,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                  <h4 class="text-2xl font-bold mt-6 mb-3 text-white font-orbitron">Achievements</h4>
                 <div id="modal-achievements-container" class="grid grid-cols-3 gap-3"></div>
                 
-                <p class="text-xs text-gray-500 mt-6 text-center">Note: Mission history and daily XP are private and not visible to other operatives.</p>
+                 <p class="text-xs text-gray-500 mt-6 text-center">Note: Mission history and daily XP are private and not visible to other operatives.</p>
             `;
             
             const achievementsContainer = content.querySelector('#modal-achievements-container');
@@ -1738,6 +1877,92 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             modal.style.display = 'flex';
         }
 
+        // --- NEW/MODIFIED TASK & MODAL FUNCTIONS ---
+        function openAddTaskModal(dateString) {
+            const form = document.getElementById('add-task-form');
+            form.reset();
+            
+            document.getElementById('task-id').value = '';
+            document.getElementById('task-date').value = dateString || getTodayDateString();
+
+            document.getElementById('task-modal-title').textContent = 'Add New Mission';
+            document.getElementById('save-task-btn').textContent = 'Add Mission';
+            document.getElementById('other-subject-container').classList.add('hidden');
+            
+            document.getElementById('add-task-modal').style.display = 'flex';
+        }
+        
+        function openEditTaskModal(taskId, taskDate) {
+            const task = userData.tasks[taskDate]?.find(t => t.id === taskId);
+            if (!task) return;
+
+            document.getElementById('task-modal-title').textContent = 'Edit Mission';
+            document.getElementById('save-task-btn').textContent = 'Save Changes';
+            
+            document.getElementById('task-id').value = taskId;
+            document.getElementById('task-date').value = taskDate;
+            document.getElementById('task-title').value = task.title;
+            document.getElementById('task-duration').value = task.duration;
+
+            const subjectSelect = document.getElementById('task-subject');
+            const otherSubjectContainer = document.getElementById('other-subject-container');
+            const otherSubjectInput = document.getElementById('task-subject-other');
+            const options = Array.from(subjectSelect.options).map(opt => opt.value);
+            if (options.includes(task.subject)) {
+                subjectSelect.value = task.subject;
+                otherSubjectContainer.classList.add('hidden');
+            } else {
+                subjectSelect.value = 'other';
+                otherSubjectInput.value = task.subject;
+                otherSubjectContainer.classList.remove('hidden');
+            }
+
+            document.getElementById('add-task-modal').style.display = 'flex';
+        }
+
+        function showConfirmModal(message, onConfirm, isAlert = false) {
+            const modal = document.getElementById('confirm-modal');
+            const text = document.getElementById('confirm-modal-text');
+            const title = document.getElementById('confirm-modal-title');
+            const confirmBtn = document.getElementById('confirm-modal-confirm');
+            const cancelBtn = document.getElementById('confirm-modal-cancel');
+            
+            text.textContent = message;
+            confirmCallback = onConfirm;
+            
+            if (isAlert) {
+                title.textContent = "Notification";
+                confirmBtn.classList.add('hidden');
+                cancelBtn.textContent = 'Close';
+            } else {
+                title.textContent = "Confirm Action";
+                confirmBtn.classList.remove('hidden');
+                cancelBtn.textContent = 'Cancel';
+            }
+            
+            modal.style.display = 'flex';
+        }
+
+        function handleTaskAction(e) {
+            const button = e.target.closest('button');
+            if (!button) return;
+
+            const taskId = button.dataset.taskId;
+            const taskDate = button.dataset.taskDate;
+
+            if (button.classList.contains('task-edit-btn')) {
+                openEditTaskModal(taskId, taskDate);
+            } else if (button.classList.contains('task-partial-btn')) {
+                completeTask(taskId, taskDate, 'partial');
+            } else if (button.classList.contains('task-full-btn')) {
+                completeTask(taskId, taskDate, 'completed');
+            } else if (button.classList.contains('task-delete-btn')) {
+                showConfirmModal('Are you sure you want to delete this mission? This cannot be undone.', () => {
+                    deleteTask(taskId, taskDate);
+                });
+            }
+        }
+        
         // --- EVENT LISTENERS ---
         function setupEventListeners() {
             // Auth
@@ -1788,7 +2013,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                 document.getElementById('avatar-selection-modal').style.display = 'none';
             });
 
-            // Calendar Navigation
+            // Calendar Navigation & Task Adding
             document.getElementById('prev-month-btn').addEventListener('click', () => {
                 currentCalendarDate.setMonth(currentCalendarDate.getMonth() - 1);
                 renderCalendar();
@@ -1797,7 +2022,9 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                 currentCalendarDate.setMonth(currentCalendarDate.getMonth() + 1);
                 renderCalendar();
             });
-
+            document.getElementById('calendar-add-task-btn').addEventListener('click', (e) => {
+                openAddTaskModal(e.currentTarget.dataset.date);
+            });
 
             // Navigation
             document.querySelectorAll('.nav-link').forEach(link => {
@@ -1806,29 +2033,24 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                     const targetId = e.currentTarget.getAttribute('href').substring(1);
                     document.querySelectorAll('.page').forEach(p => p.classList.add('hidden'));
                     document.getElementById(targetId).classList.remove('hidden');
-                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('p-3', 'bg-cyan-500/20', 'rounded-lg'));
-                    e.currentTarget.classList.add('p-3', 'bg-cyan-500/20', 'rounded-lg');
+                    document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('bg-cyan-500/20'));
+                    e.currentTarget.classList.add('bg-cyan-500/20');
                     document.getElementById('page-title').textContent = e.currentTarget.querySelector('.nav-text').textContent;
                     
                     if (targetId === 'social') {
                         setupSocialListeners();
-                        renderSocialPage();
+                    } else if (targetId === 'calendar') {
+                         renderCalendar();
+                         document.getElementById('calendar-tasks-container').innerHTML = '';
+                         document.getElementById('calendar-task-controls').classList.add('hidden');
                     }
-                    if (targetId === 'calendar') renderCalendar();
-                    if (targetId === 'leagues') renderLeaguesPage();
-                    if (targetId === 'leaderboard') renderLeaderboard();
-                    if (targetId === 'profile') {
-                        renderAchievements();
-                        renderSeasonHistory();
-                    }
-                    if (targetId === 'inventory') renderInventoryPage();
-                    if (targetId === 'pass') renderStudyPass();
-                    if (targetId === 'shop') renderShop();
+                    
+                    updateUI();
                 });
             });
 
-            // Add Task
-            document.getElementById('add-task-btn').addEventListener('click', () => document.getElementById('add-task-modal').style.display = 'flex');
+            // Task Modal
+            document.getElementById('add-task-btn').addEventListener('click', () => openAddTaskModal(getTodayDateString()));
             document.getElementById('cancel-add-task-btn').addEventListener('click', () => document.getElementById('add-task-modal').style.display = 'none');
             
             const subjectSelect = document.getElementById('task-subject');
@@ -1839,23 +2061,54 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             
             document.getElementById('add-task-form').addEventListener('submit', (e) => {
                 e.preventDefault();
+                const taskId = document.getElementById('task-id').value;
+                const taskDate = document.getElementById('task-date').value;
                 const title = document.getElementById('task-title').value;
                 const duration = document.getElementById('task-duration').value;
                 let subject = subjectSelect.value;
                 if (subject === 'other') { subject = document.getElementById('task-subject-other').value || 'Other'; }
-                addTask(title, duration, subject);
+                
+                if (taskId) {
+                    updateTask(taskId, taskDate, { title, duration, subject });
+                } else {
+                    addTask(title, duration, subject, taskDate);
+                }
+
                 document.getElementById('add-task-modal').style.display = 'none';
                 e.target.reset();
-                otherSubjectContainer.classList.add('hidden');
+
+                if (!document.getElementById('calendar').classList.contains('hidden')) {
+                    renderTasks(taskDate);
+                    renderCalendar();
+                }
             });
             
+            // Task actions (event delegation)
+            document.getElementById('daily-tasks-container').addEventListener('click', handleTaskAction);
+            document.getElementById('calendar-tasks-container').addEventListener('click', handleTaskAction);
+
+            // Confirmation Modal
+            const confirmModal = document.getElementById('confirm-modal');
+            document.getElementById('confirm-modal-cancel').addEventListener('click', () => {
+                confirmModal.style.display = 'none';
+                confirmCallback = null;
+            });
+            document.getElementById('confirm-modal-confirm').addEventListener('click', () => {
+                if (typeof confirmCallback === 'function') {
+                    confirmCallback();
+                }
+                confirmModal.style.display = 'none';
+                confirmCallback = null;
+            });
+
+
             // Update Profile Name
             document.getElementById('update-profile-btn').addEventListener('click', async () => {
                 const newName = document.getElementById('profile-name-input').value;
                 if (newName && newName.trim() && newName !== userData.displayName) {
                     userData.displayName = newName;
                     await saveUserData();
-                    alert('Profile name updated!');
+                    showConfirmModal('Profile name updated!', null, true);
                 }
             });
         }
