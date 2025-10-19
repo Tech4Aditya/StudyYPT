@@ -87,18 +87,18 @@
             color: #38bdf8;
             text-shadow: 0 0 8px #38bdf8, 0 0 12px #0ea5e9;
         }
-        #league-members-list::-webkit-scrollbar, #modal-achievements-container::-webkit-scrollbar { width: 6px; }
-        #league-members-list::-webkit-scrollbar-track, #modal-achievements-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
-        #league-members-list::-webkit-scrollbar-thumb, #modal-achievements-container::-webkit-scrollbar-thumb {
+        #league-members-list::-webkit-scrollbar, .achievements-scroll-container::-webkit-scrollbar { width: 6px; }
+        #league-members-list::-webkit-scrollbar-track, .achievements-scroll-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        #league-members-list::-webkit-scrollbar-thumb, .achievements-scroll-container::-webkit-scrollbar-thumb {
             background-color: rgba(0, 255, 255, 0.3);
             border-radius: 3px;
             border: 1px solid rgba(0, 255, 255, 0.5);
         }
-        #modal-achievements-container {
-            max-height: 180px;
-            overflow-y: auto;
-            padding-right: 8px;
-        }
+        /* Achievement Rarity Colors */
+        .rarity-common { color: #22c55e; /* green-500 */ }
+        .rarity-rare { color: #f97316; /* orange-500 */ }
+        .rarity-legendary { color: #facc15; /* yellow-400 */ text-shadow: 0 0 6px #facc15; }
+        .rarity-mythic { color: #ef4444; /* red-500 */ text-shadow: 0 0 6px #ef4444; }
 
     </style>
 </head>
@@ -365,9 +365,11 @@
     </div>
 
     <div id="user-profile-modal" class="modal items-center justify-center">
-        <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-xl mx-auto modal-content">
-            <div id="user-profile-content"></div>
-            <div class="flex justify-end pt-6">
+        <div class="cyber-card rounded-lg shadow-xl p-8 w-full max-w-xl mx-auto modal-content flex flex-col max-h-[90vh]">
+            <div id="user-profile-content-wrapper" class="flex-grow overflow-y-auto pr-2 achievements-scroll-container">
+                <!-- Content will be injected here -->
+            </div>
+            <div class="flex justify-end pt-6 flex-shrink-0">
                 <button id="close-user-profile-modal-btn" class="bg-gray-600/50 hover:bg-gray-500/50 text-white font-bold py-2 px-6 rounded-lg">Close</button>
             </div>
         </div>
@@ -692,6 +694,7 @@
                 let needsSave = false;
 
                 // --- BACKWARDS COMPATIBILITY FOR NEW ACHIEVEMENTS ---
+                if (!userData.achievements) userData.achievements = [];
                 const existingAchievementIds = new Set(userData.achievements.map(a => a.id));
                 const newAchievements = MOCK_ACHIEVEMENTS.filter(a => !existingAchievementIds.has(a.id));
                 if (newAchievements.length > 0) {
@@ -1495,17 +1498,34 @@
             container.innerHTML = '';
             
             const rarityOrder = { 'Mythic': 1, 'Legendary': 2, 'Rare': 3, 'Common': 4 };
+            const rarityToClass = {
+                'Common': 'rarity-common',
+                'Rare': 'rarity-rare',
+                'Legendary': 'rarity-legendary',
+                'Mythic': 'rarity-mythic'
+            };
 
-            const sortedAchievements = [...userData.achievements].sort((a,b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
+            const achievedList = (userData.achievements || []).filter(a => a.achieved)
+                .sort((a, b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
+            const unachievedList = (userData.achievements || []).filter(a => !a.achieved)
+                .sort((a, b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
+            const sortedAchievements = [...achievedList, ...unachievedList];
+
 
             sortedAchievements.forEach(achievement => {
+                const rarityClass = rarityToClass[achievement.rarity] || 'text-cyan-400';
                 const achEl = document.createElement('div');
-                achEl.className = `cyber-card p-4 rounded-lg text-center ${!achievement.achieved ? 'opacity-50 grayscale' : ''}`;
+                achEl.className = `cyber-card p-4 rounded-lg text-center flex flex-col justify-between ${!achievement.achieved ? 'opacity-50' : ''}`;
                 achEl.innerHTML = `
-                    <i class="fas ${achievement.icon} text-4xl text-cyan-400 mb-2"></i>
-                    <h4 class="font-bold text-lg text-white">${achievement.name}</h4>
-                    <p class="text-gray-400 text-sm">${achievement.description}</p>
-                    ${achievement.achieved ? '<span class="text-green-400 font-bold mt-2 block">Achieved!</span>' : ''}
+                    <div>
+                        <i class="fas ${achievement.icon} text-4xl mb-2 ${rarityClass}"></i>
+                        <h4 class="font-bold text-lg text-white break-words min-h-[3.5rem] flex items-center justify-center">${achievement.name}</h4>
+                        <p class="text-gray-400 text-sm">${achievement.description}</p>
+                    </div>
+                    ${achievement.achieved 
+                        ? `<span class="font-bold mt-2 block ${rarityClass}">Achieved!</span>` 
+                        : '<span class="text-gray-500 font-bold mt-2 block">Not Achieved</span>'
+                    }
                 `;
                 container.appendChild(achEl);
             });
@@ -1898,7 +1918,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             if (!user) return;
             
             const modal = document.getElementById('user-profile-modal');
-            const content = document.getElementById('user-profile-content');
+            const content = document.getElementById('user-profile-content-wrapper'); // Target the wrapper now
             
             const allPlayers = [...allUsersCache, ...botsData];
             allPlayers.sort((a, b) => b.monthlyXP - a.monthlyXP);
@@ -1913,41 +1933,45 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             const titleHTML = equippedTitle ? `<span class="ml-4 text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1 rounded-full">${equippedTitle.name.replace('Title: ', '')}</span>` : '';
 
             content.innerHTML = `
-                <div class="flex items-start space-x-6">
-                    <img src="${user.profilePicUrl}" class="w-24 h-24 rounded-full border-4 border-cyan-400 object-cover">
-                    <div class="flex-1">
-                        <div class="flex items-center">
-                            <h3 class="text-3xl font-bold font-orbitron text-white">${user.displayName}</h3>
-                            ${titleHTML}
+                <div>
+                    <div class="flex items-start space-x-6">
+                        <img src="${user.profilePicUrl}" class="w-24 h-24 rounded-full border-4 border-cyan-400 object-cover">
+                        <div class="flex-1">
+                            <div class="flex items-center">
+                                <h3 class="text-3xl font-bold font-orbitron text-white">${user.displayName}</h3>
+                                ${titleHTML}
+                            </div>
+                            <div class="flex items-center gap-4 mt-2 text-gray-300">
+                               <span class="font-bold text-md font-orbitron bg-cyan-900/50 border-2 border-cyan-400/50 px-3 py-1 rounded-lg">LEVEL ${user.level}</span>
+                               <span class="flex items-center gap-2"><img src="${userLeague.iconUrl}" class="w-6 h-6 rounded-full">${userLeague.name}</span>
+                            </div>
                         </div>
-                        <div class="flex items-center gap-4 mt-2 text-gray-300">
-                           <span class="font-bold text-md font-orbitron bg-cyan-900/50 border-2 border-cyan-400/50 px-3 py-1 rounded-lg">LEVEL ${user.level}</span>
-                           <span class="flex items-center gap-2"><img src="${userLeague.iconUrl}" class="w-6 h-6 rounded-full">${userLeague.name}</span>
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-4 mt-6">
+                        <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-pink-900/50 to-gray-900/30">
+                            <p class="text-sm text-pink-300 flex items-center justify-center gap-2"><i class="fas fa-moon"></i> Monthly</p>
+                            <p class="text-xl font-bold font-orbitron text-white">${user.monthlyXP || 0}</p>
+                        </div>
+                         <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-yellow-900/50 to-gray-900/30">
+                            <p class="text-sm text-yellow-300 flex items-center justify-center gap-2"><i class="fas fa-fire"></i> Total</p>
+                            <p class="text-xl font-bold font-orbitron text-white">${user.totalXP || 0}</p>
+                        </div>
+                         <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-purple-900/50 to-gray-900/30">
+                            <p class="text-sm text-purple-300 flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> Rank</p>
+                            <p class="text-xl font-bold font-orbitron text-white">${rank > 0 ? `#${rank}` : 'N/A'}</p>
+                        </div>
+                        <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-green-900/50 to-gray-900/30">
+                            <p class="text-sm text-green-300 flex items-center justify-center gap-2"><i class="fas fa-gem"></i> Pass Tier</p>
+                            <p class="text-xl font-bold font-orbitron text-white">${displayTier}</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 mt-6">
-                    <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-pink-900/50 to-gray-900/30">
-                        <p class="text-sm text-pink-300 flex items-center justify-center gap-2"><i class="fas fa-moon"></i> Monthly</p>
-                        <p class="text-xl font-bold font-orbitron text-white">${user.monthlyXP || 0}</p>
-                    </div>
-                     <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-yellow-900/50 to-gray-900/30">
-                        <p class="text-sm text-yellow-300 flex items-center justify-center gap-2"><i class="fas fa-fire"></i> Total</p>
-                        <p class="text-xl font-bold font-orbitron text-white">${user.totalXP || 0}</p>
-                    </div>
-                     <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-purple-900/50 to-gray-900/30">
-                        <p class="text-sm text-purple-300 flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> Rank</p>
-                        <p class="text-xl font-bold font-orbitron text-white">${rank > 0 ? `#${rank}` : 'N/A'}</p>
-                    </div>
-                    <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-green-900/50 to-gray-900/30">
-                        <p class="text-sm text-green-300 flex items-center justify-center gap-2"><i class="fas fa-gem"></i> Pass Tier</p>
-                        <p class="text-xl font-bold font-orbitron text-white">${displayTier}</p>
-                    </div>
+                <div class="mt-6">
+                    <h4 class="text-2xl font-bold mb-3 text-white font-orbitron">Achievements</h4>
+                    <div id="modal-achievements-container" class="grid grid-cols-4 gap-3"></div>
                 </div>
-
-                 <h4 class="text-2xl font-bold mt-6 mb-3 text-white font-orbitron">Achievements</h4>
-                <div id="modal-achievements-container" class="grid grid-cols-5 gap-3"></div>
                 
                  <p class="text-xs text-gray-500 mt-6 text-center">Note: Mission history and daily XP are private and not visible to other operatives.</p>
             `;
@@ -1955,15 +1979,33 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             const achievementsContainer = content.querySelector('#modal-achievements-container');
             const userAchievements = user.achievements || [];
             const rarityOrder = { 'Mythic': 1, 'Legendary': 2, 'Rare': 3, 'Common': 4 };
-            userAchievements.sort((a,b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
+            const rarityToClass = {
+                'Common': 'rarity-common',
+                'Rare': 'rarity-rare',
+                'Legendary': 'rarity-legendary',
+                'Mythic': 'rarity-mythic'
+            };
+            
+            const achievedList = (userAchievements || []).filter(a => a.achieved)
+                .sort((a, b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
+            const unachievedList = (userAchievements || []).filter(a => !a.achieved)
+                .sort((a, b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
+            const sortedAchievements = [...achievedList, ...unachievedList];
 
-             userAchievements.slice(0, 50).forEach(achievement => {
+
+             sortedAchievements.slice(0, 50).forEach(achievement => {
+                const rarityClass = rarityToClass[achievement.rarity] || 'text-cyan-400';
                 const achEl = document.createElement('div');
-                achEl.className = `cyber-card p-3 rounded-lg text-center ${!achievement.achieved ? 'opacity-40 grayscale' : ''}`;
+                achEl.className = `cyber-card p-3 rounded-lg text-center flex flex-col justify-between ${!achievement.achieved ? 'opacity-50' : ''}`;
                 achEl.innerHTML = `
-                    <i class="fas ${achievement.icon} text-3xl text-cyan-400 mb-1"></i>
-                    <h5 class="font-semibold text-sm text-white">${achievement.name}</h5>
-                    ${achievement.achieved ? '<span class="text-green-400 font-bold text-xs mt-1 block">Achieved!</span>' : ''}
+                    <div>
+                        <i class="fas ${achievement.icon} text-3xl mb-1 ${rarityClass}"></i>
+                        <h5 class="font-semibold text-sm text-white break-words min-h-[2.5rem] flex items-center justify-center">${achievement.name}</h5>
+                    </div>
+                    ${achievement.achieved 
+                        ? `<span class="font-bold text-xs mt-1 block ${rarityClass}">Achieved!</span>` 
+                        : '<span class="text-gray-500 font-bold text-xs mt-1 block">Not Achieved</span>'
+                    }
                 `;
                 achievementsContainer.appendChild(achEl);
             });
