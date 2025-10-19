@@ -79,6 +79,10 @@
             top: 100%;
             z-index: 10;
         }
+        .fa-crown.founder-title {
+            color: #FFD700;
+            text-shadow: 0 0 8px #FFD700, 0 0 12px #FFA500;
+        }
 
     </style>
 </head>
@@ -454,6 +458,7 @@
             { id: 'title_cyber_ninja', type: 'title', name: 'Title: Cyber-Ninja', description: 'A title for the swift and silent.', cost: 1000, currency: 'sp', icon: 'fa-user-ninja' },
             { id: 'title_quant', type: 'title', name: 'Title: The Quant', description: 'For the master of numbers.', cost: 1500, currency: 'sp', icon: 'fa-calculator' },
             { id: 'title_physicist', type: 'title', name: 'Title: The Physicist', description: 'For the explorer of reality.', cost: 3000, currency: 'coins', icon: 'fa-atom' },
+            { id: 'title_founder', type: 'title', name: 'Title: Founder', description: 'For the original creator.', cost: 999999, currency: 'sp', icon: 'fa-crown', hidden: true },
             { id: 'sp_pack_1', type: 'currency', name: '100 SP Pack', description: 'Get 100 SP for 2000 Coins.', cost: 2000, currency: 'coins' },
         ];
         const MOCK_ACHIEVEMENTS = [ 
@@ -961,7 +966,8 @@
 
             const profileTitleEl = document.getElementById('profile-title');
             const equippedTitle = SHOP_ITEMS.find(item => item.id === userData.equippedTitle && item.type === 'title');
-            const titleIconHTML = equippedTitle ? `<i class="fas ${equippedTitle.icon} text-cyan-300 ml-2"></i>` : '';
+            const titleIconHTML = equippedTitle ? `<i class="fas ${equippedTitle.icon} ${equippedTitle.id === 'title_founder' ? 'founder-title' : 'text-cyan-300'} ml-2"></i>` : '';
+
             
             document.getElementById('header-user-name').innerHTML = `${userData.displayName || 'Operative'}${titleIconHTML}`;
             document.getElementById('dashboard-profile-name').innerHTML = `${userData.displayName || 'Operative'}${titleIconHTML}`;
@@ -1070,7 +1076,7 @@
                 const playerLeague = LEAGUES.slice().reverse().find(l => player.monthlyXP >= l.minXP) || LEAGUES[0];
                 const displayTier = STUDY_PASS_REWARDS.filter(tier => player.monthlyXP >= tier.xp).length;
                 const equippedTitle = SHOP_ITEMS.find(item => item.id === player.equippedTitle && item.type === 'title');
-                const titleIconHTML = equippedTitle ? `<i class="fas ${equippedTitle.icon} text-cyan-400 ml-2"></i>` : '';
+                const titleIconHTML = equippedTitle ? `<i class="fas ${equippedTitle.icon} ${equippedTitle.id === 'title_founder' ? 'founder-title' : 'text-cyan-400'} ml-2"></i>` : '';
 
                 const row = document.createElement('tr');
                 row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20 text-white' : ''}`;
@@ -1182,6 +1188,7 @@
             if (!container || !userData) return;
             container.innerHTML = '';
             SHOP_ITEMS.forEach(item => {
+                if (item.hidden) return; // Don't show hidden items in the shop
                 const isOwned = (item.type === 'avatar' && userData.unlockedAvatars.includes(item.id)) || (item.type === 'title' && userData.unlockedTitles.includes(item.id));
                 const itemEl = document.createElement('div');
                 const currencyIcon = item.currency === 'sp' ? 'fa-database' : 'fa-coins';
@@ -1670,7 +1677,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                     </div>
                 </div>
 
-                <div class="mt-6 grid grid-cols-2 gap-4">
+                <div class="grid grid-cols-2 gap-4 mt-6">
                     <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-pink-900/50 to-gray-900/30">
                         <p class="text-sm text-pink-300 flex items-center justify-center gap-2"><i class="fas fa-moon"></i> Monthly</p>
                         <p class="text-xl font-bold font-orbitron text-white">${user.monthlyXP || 0}</p>
@@ -1838,4 +1845,3 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
     </script>
 </body>
 </html>
-
