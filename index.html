@@ -87,13 +87,19 @@
             color: #38bdf8;
             text-shadow: 0 0 8px #38bdf8, 0 0 12px #0ea5e9;
         }
-        #league-members-list::-webkit-scrollbar { width: 6px; }
-        #league-members-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
-        #league-members-list::-webkit-scrollbar-thumb {
+        #league-members-list::-webkit-scrollbar, #modal-achievements-container::-webkit-scrollbar { width: 6px; }
+        #league-members-list::-webkit-scrollbar-track, #modal-achievements-container::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        #league-members-list::-webkit-scrollbar-thumb, #modal-achievements-container::-webkit-scrollbar-thumb {
             background-color: rgba(0, 255, 255, 0.3);
             border-radius: 3px;
             border: 1px solid rgba(0, 255, 255, 0.5);
         }
+        #modal-achievements-container {
+            max-height: 180px;
+            overflow-y: auto;
+            padding-right: 8px;
+        }
+
     </style>
 </head>
 <body class="text-gray-200 antialiased">
@@ -2260,4 +2266,5 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
     </script>
 </body>
 </html>
+
 
