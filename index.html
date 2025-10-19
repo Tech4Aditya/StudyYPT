@@ -87,7 +87,13 @@
             color: #38bdf8;
             text-shadow: 0 0 8px #38bdf8, 0 0 12px #0ea5e9;
         }
-
+        #league-members-list::-webkit-scrollbar { width: 6px; }
+        #league-members-list::-webkit-scrollbar-track { background: rgba(0,0,0,0.2); border-radius: 3px; }
+        #league-members-list::-webkit-scrollbar-thumb {
+            background-color: rgba(0, 255, 255, 0.3);
+            border-radius: 3px;
+            border: 1px solid rgba(0, 255, 255, 0.5);
+        }
     </style>
 </head>
 <body class="text-gray-200 antialiased">
@@ -425,6 +431,22 @@
             </div>
         </div>
     </div>
+
+    <!-- League Members Modal -->
+    <div id="league-members-modal" class="modal items-center justify-center">
+        <div class="cyber-card rounded-lg shadow-xl p-6 w-full max-w-2xl mx-auto modal-content flex flex-col" style="max-height: 90vh;">
+            <div class="flex items-center mb-4 flex-shrink-0">
+                <h2 id="league-modal-title" class="text-2xl font-bold text-white font-orbitron flex items-center gap-3"></h2>
+            </div>
+            <div id="league-members-list" class="flex-grow overflow-y-auto pr-2 space-y-2">
+                <!-- Members will be injected here -->
+            </div>
+             <div class="flex justify-end pt-6 flex-shrink-0">
+                <button id="close-league-members-modal-btn" class="bg-gray-600/50 hover:bg-gray-500/50 text-white font-bold py-2 px-6 rounded-lg">Close</button>
+            </div>
+        </div>
+    </div>
+
 
     <script type="module">
         // Firebase Imports
@@ -1232,7 +1254,7 @@
         function renderLeaguesPage() {
             const container = document.getElementById('leagues-container');
             if (!container) return;
-            if (!userData || !allUsersCache) {
+            if (!userData || !allUsersCache || allUsersCache.length === 0) {
                 container.innerHTML = '<div class="text-center text-gray-400 p-8 cyber-card rounded-lg col-span-full">Loading league data...</div>';
                 return;
             }
@@ -1263,13 +1285,16 @@
                 }
 
                 const leagueCard = document.createElement('div');
-                leagueCard.className = `cyber-card p-6 rounded-lg text-center ${isCurrentLeague ? 'border-2 border-cyan-400' : ''}`;
+                leagueCard.className = `cyber-card p-6 rounded-lg text-center flex flex-col`;
                 leagueCard.innerHTML = `
-                    <img src="${league.iconUrl}" class="w-24 h-24 rounded-full mx-auto mb-4 border-2 ${isCurrentLeague ? 'border-cyan-400' : 'border-gray-700'}">
-                    <h3 class="text-2xl font-bold text-white font-orbitron">${league.name}</h3>
-                    <p class="text-gray-400">Requires ${league.minXP} XP</p>
-                    <p class="mt-2 text-cyan-300 font-semibold">${playersInLeague} Operatives</p>
-                    ${progressHTML}
+                    <div class="flex-grow">
+                        <img src="${league.iconUrl}" class="w-24 h-24 rounded-full mx-auto mb-4 border-2 ${isCurrentLeague ? 'border-cyan-400' : 'border-gray-700'}">
+                        <h3 class="text-2xl font-bold text-white font-orbitron">${league.name}</h3>
+                        <p class="text-gray-400">Requires ${league.minXP} XP</p>
+                        <p class="mt-2 text-cyan-300 font-semibold">${playersInLeague} Operatives</p>
+                        ${progressHTML}
+                    </div>
+                    <button class="view-operatives-btn cyber-button text-cyan-300 font-bold py-2 px-4 rounded-lg mt-4" data-league-id="${league.id}">View Operatives</button>
                 `;
                 container.appendChild(leagueCard);
             });
@@ -1877,6 +1902,52 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             modal.style.display = 'flex';
         }
 
+        function renderLeagueMembersModal(leagueId) {
+            const league = LEAGUES.find(l => l.id === leagueId);
+            if (!league) return;
+
+            const leagueIndex = LEAGUES.findIndex(l => l.id === leagueId);
+            const nextLeague = LEAGUES[leagueIndex + 1];
+
+            const allPlayers = [...allUsersCache, ...botsData];
+            const playersInLeague = allPlayers.filter(p => {
+                const xp = p.monthlyXP || 0;
+                if (nextLeague) {
+                    return xp >= league.minXP && xp < nextLeague.minXP;
+                }
+                return xp >= league.minXP; // For the top league
+            });
+
+            playersInLeague.sort((a, b) => (b.monthlyXP || 0) - (a.monthlyXP || 0));
+
+            const modal = document.getElementById('league-members-modal');
+            const titleEl = document.getElementById('league-modal-title');
+            const listEl = document.getElementById('league-members-list');
+
+            titleEl.innerHTML = `<img src="${league.iconUrl}" class="w-8 h-8 rounded-full"> Operatives in ${league.name} League`;
+            listEl.innerHTML = '';
+
+            if (playersInLeague.length === 0) {
+                listEl.innerHTML = '<p class="text-gray-400 text-center p-4">This league is currently empty.</p>';
+            } else {
+                playersInLeague.forEach((player, index) => {
+                    const playerEl = document.createElement('div');
+                    playerEl.className = 'cyber-card p-3 rounded-lg flex items-center justify-between';
+                    playerEl.innerHTML = `
+                        <div class="flex items-center gap-4">
+                            <span class="font-bold font-orbitron text-lg w-8 text-center">${index + 1}</span>
+                            <img src="${player.profilePicUrl || ''}" class="w-10 h-10 rounded-full object-cover">
+                            <span class="font-semibold">${player.displayName || player.name}</span>
+                        </div>
+                        <span class="font-bold font-orbitron text-cyan-300">${player.monthlyXP || 0} XP</span>
+                    `;
+                    listEl.appendChild(playerEl);
+                });
+            }
+
+            modal.style.display = 'flex';
+        }
+
         // --- NEW/MODIFIED TASK & MODAL FUNCTIONS ---
         function openAddTaskModal(dateString) {
             const form = document.getElementById('add-task-form');
@@ -2101,6 +2172,17 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                 confirmCallback = null;
             });
 
+            // League Members Modal
+            document.getElementById('leagues-container').addEventListener('click', (e) => {
+                const button = e.target.closest('.view-operatives-btn');
+                if (button) {
+                    renderLeagueMembersModal(button.dataset.leagueId);
+                }
+            });
+            document.getElementById('close-league-members-modal-btn').addEventListener('click', () => {
+                document.getElementById('league-members-modal').style.display = 'none';
+            });
+
 
             // Update Profile Name
             document.getElementById('update-profile-btn').addEventListener('click', async () => {
@@ -2115,3 +2197,4 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
     </script>
 </body>
 </html>
+
