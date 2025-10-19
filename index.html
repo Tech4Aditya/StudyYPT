@@ -56,13 +56,9 @@
             cursor: not-allowed;
             filter: grayscale(0.8);
         }
-        .main-content-area {
-            overflow-y: auto;
-            height: calc(100vh - 73px);
-        }
-        .main-content-area::-webkit-scrollbar { width: 8px; }
-        .main-content-area::-webkit-scrollbar-track { background: transparent; }
-        .main-content-area::-webkit-scrollbar-thumb { background-color: rgba(0, 255, 255, 0.3); border-radius: 4px; border: 1px solid rgba(0, 255, 255, 0.5); }
+        main::-webkit-scrollbar { width: 8px; }
+        main::-webkit-scrollbar-track { background: transparent; }
+        main::-webkit-scrollbar-thumb { background-color: rgba(0, 255, 255, 0.3); border-radius: 4px; border: 1px solid rgba(0, 255, 255, 0.5); }
         .profile-avatar-upload { cursor: pointer; }
         
         /* New Sidebar Styles */
@@ -76,7 +72,13 @@
             border-radius: 3px;
             border: 1px solid rgba(0, 255, 255, 0.5);
         }
-        .friend-options { display: none; }
+        .friend-options-menu {
+            display: none;
+            position: absolute;
+            right: 0;
+            top: 100%;
+            z-index: 10;
+        }
 
     </style>
 </head>
@@ -86,8 +88,14 @@
         <div class="twinkling"></div>
         <div class="clouds"></div>
     </div>
+
+    <!-- Loading View -->
+    <div id="loading-view" class="h-screen w-full flex items-center justify-center flex-col">
+        <div class="w-16 h-16 border-4 border-cyan-400 border-t-transparent rounded-full animate-spin mb-4"></div>
+        <h2 class="text-2xl font-bold text-white font-orbitron text-glow">Signing In...</h2>
+    </div>
     
-    <!-- Login View --><div id="login-view" class="h-screen w-full flex items-center justify-center">
+    <!-- Login View --><div id="login-view" class="h-screen w-full flex items-center justify-center hidden">
         <div class="cyber-card p-8 rounded-lg w-full max-w-md">
             <img src="https://github.com/Tech4Aditya/StudyYPT/blob/main/StudyYPT.jpg?raw=true" alt="StudyYPT Logo" class="w-24 mx-auto mb-4">
             <h1 id="auth-title" class="text-3xl font-bold text-white text-glow font-orbitron mb-6 text-center">Login</h1>
@@ -126,7 +134,7 @@
             </div>
         </nav>
         
-        <!-- Main Area --><div class="flex-1 flex flex-col">
+        <!-- Main Area --><div class="flex-1 flex flex-col overflow-hidden">
             <!-- Header --><header class="bg-black/10 backdrop-blur-lg border-b border-cyan-300/20 p-4 flex justify-between items-center z-10">
                 <div><h2 id="page-title" class="text-3xl font-bold text-white text-glow font-orbitron">Dashboard</h2></div>
                 <div class="flex items-center space-x-4">
@@ -146,7 +154,7 @@
                 </div>
             </header>
 
-            <!-- Main Content --><main class="main-content-area p-8">
+            <!-- Main Content --><main class="flex-1 overflow-y-auto p-8">
                 <div id="home" class="page">
                      <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                         <div class="lg:col-span-1 space-y-8">
@@ -528,6 +536,7 @@
                     }
                     loadUserData(user);
                 } else {
+                    document.getElementById('loading-view').classList.add('hidden');
                     document.getElementById('login-view').classList.remove('hidden');
                     document.getElementById('app-view').classList.add('hidden');
                     document.getElementById('first-time-setup-modal').style.display = 'none';
@@ -655,9 +664,11 @@
                 if(needsSave) await saveUserData();
 
                 if (!userData.setupComplete) {
+                    document.getElementById('loading-view').classList.add('hidden');
                     document.getElementById('setup-display-name').value = userData.displayName;
                     document.getElementById('first-time-setup-modal').style.display = 'flex';
                 } else {
+                    document.getElementById('loading-view').classList.add('hidden');
                     document.getElementById('login-view').classList.add('hidden');
                     document.getElementById('app-view').classList.remove('hidden');
                     document.getElementById('first-time-setup-modal').style.display = 'none';
@@ -1806,5 +1817,4 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
     </script>
 </body>
 </html>
-
 
