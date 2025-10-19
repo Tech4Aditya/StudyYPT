@@ -153,11 +153,35 @@
                                 <img id="dashboard-profile-pic" class="w-24 h-24 rounded-full mx-auto border-4 border-cyan-400/50 mb-4 object-cover">
                                 <h3 id="dashboard-profile-name" class="text-2xl font-bold text-white font-orbitron"></h3>
                                 <p id="dashboard-profile-league" class="text-cyan-300 font-semibold text-glow flex items-center justify-center"></p>
-                                <div class="mt-4 text-left grid grid-cols-2 gap-x-4 gap-y-2 text-gray-300">
-                                    <p class="cyber-card p-2 rounded"><i class="fas fa-calendar-day w-5 mr-1 text-cyan-400"></i> XP Today: <strong id="dashboard-today-xp" class="text-white">0</strong></p>
-                                    <p class="cyber-card p-2 rounded"><i class="fas fa-fire w-5 mr-1 text-cyan-400"></i> Total XP: <strong id="dashboard-total-xp" class="text-white">0</strong></p>
-                                    <p class="cyber-card p-2 rounded"><i class="fas fa-meteor w-5 mr-1 text-cyan-400"></i> Season: <strong id="dashboard-season-number" class="text-white">1</strong></p>
-                                    <p class="cyber-card p-2 rounded"><i class="fas fa-gem w-5 mr-1 text-cyan-400"></i> Pass Tier: <strong id="dashboard-pass-tier" class="text-white">10</strong></p>
+                                
+                                <div class="mt-4 grid grid-cols-2 gap-4">
+                                    <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-cyan-900/50 to-gray-900/30">
+                                        <p class="text-sm text-cyan-300 flex items-center justify-center gap-2"><i class="fas fa-calendar-day"></i> Today</p>
+                                        <p id="dashboard-today-xp" class="text-xl font-bold font-orbitron text-white">0</p>
+                                    </div>
+                                    <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-pink-900/50 to-gray-900/30">
+                                        <p class="text-sm text-pink-300 flex items-center justify-center gap-2"><i class="fas fa-moon"></i> Monthly</p>
+                                        <p id="dashboard-monthly-xp" class="text-xl font-bold font-orbitron text-white">0</p>
+                                    </div>
+                                    <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-yellow-900/50 to-gray-900/30">
+                                        <p class="text-sm text-yellow-300 flex items-center justify-center gap-2"><i class="fas fa-fire"></i> Total</p>
+                                        <p id="dashboard-total-xp" class="text-xl font-bold font-orbitron text-white">0</p>
+                                    </div>
+                                    <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-purple-900/50 to-gray-900/30">
+                                        <p class="text-sm text-purple-300 flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> Rank</p>
+                                        <p id="dashboard-rank" class="text-xl font-bold font-orbitron text-white">N/A</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="mt-4 col-span-2 cyber-card p-3 rounded-lg">
+                                    <div class="flex justify-between items-center text-sm mb-1">
+                                        <span class="font-bold text-cyan-300">Season <span id="dashboard-season-number">1</span> Pass</span>
+                                        <span class="font-bold text-white">Tier <span id="dashboard-pass-tier">0</span></span>
+                                    </div>
+                                    <div class="w-full bg-gray-700/50 rounded-full h-2.5 border border-gray-600">
+                                        <div id="dashboard-pass-progress" class="bg-gradient-to-r from-purple-500 to-pink-500 h-full rounded-full xp-bar-progress" style="width: 0%;"></div>
+                                    </div>
+                                     <p id="dashboard-pass-xp-text" class="text-xs text-right text-gray-400 mt-1">0/0 XP to next tier</p>
                                 </div>
                             </div>
                             <div class="quote-container cyber-card p-6 rounded-lg">
@@ -259,6 +283,8 @@
                     </div>
                     <h3 class="text-3xl font-bold mt-8 mb-4 text-white font-orbitron">Achievements</h3>
                     <div id="achievements-container" class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4"></div>
+                     <h3 class="text-3xl font-bold mt-8 mb-4 text-white font-orbitron">Season History</h3>
+                    <div id="season-history-container" class="space-y-4"></div>
                 </div>
 
                  <div id="inventory" class="page hidden">
@@ -370,7 +396,7 @@
         // Firebase Imports
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove, where, addDoc, deleteDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getFirestore, doc, getDoc, setDoc, onSnapshot, collection, getDocs, query, updateDoc, arrayUnion, arrayRemove, where, addDoc, deleteDoc, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
         // --- FIREBASE CONFIGURATION ---
         const firebaseConfig = {
@@ -406,11 +432,11 @@
         const QUOTES = [ { text: "The only way to do great work is to love what you do.", author: "Steve Jobs" }, { text: "The future belongs to those who believe in the beauty of their dreams.", author: "Eleanor Roosevelt" }, { text: "Success is not final, failure is not fatal: it is the courage to continue that counts.", author: "Winston Churchill"} ];
         const LEAGUES = [
             { id: 'bronze', name: "Bronze", minXP: 0, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/bronze%20league.jpeg?raw=true" },
-            { id: 'silver', name: "Silver", minXP: 2000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/silver%20league.jpeg?raw=true" },
-            { id: 'gold', name: "Gold", minXP: 8000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/gold%20league.jpeg?raw=true" },
-            { id: 'platinum', name: "Platinum", minXP: 20000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/platinum%20league.jpeg?raw=true" },
-            { id: 'diamond', name: "Diamond", minXP: 40000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/diamond%20league.jpeg?raw=true" },
-            { id: 'legend', name: "Legend", minXP: 75000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/legend%20league.jpeg?raw=true" }
+            { id: 'silver', name: "Silver", minXP: 500, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/silver%20league.jpeg?raw=true" },
+            { id: 'gold', name: "Gold", minXP: 1000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/gold%20league.jpeg?raw=true" },
+            { id: 'platinum', name: "Platinum", minXP: 3000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/platinum%20league.jpeg?raw=true" },
+            { id: 'diamond', name: "Diamond", minXP: 4000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/diamond%20league.jpeg?raw=true" },
+            { id: 'legend', name: "Legend", minXP: 5000, iconUrl: "https://github.com/Tech4Aditya/StudyYPT/blob/main/legend%20league.jpeg?raw=true" }
         ];
         const SHOP_ITEMS = [ 
             { id: 'viper', type: 'avatar', name: 'Viper Avatar', description: 'A sleek, serpentine avatar.', cost: 1000, currency: 'coins' },
@@ -422,9 +448,12 @@
             { id: 'sp_pack_1', type: 'currency', name: '100 SP Pack', description: 'Get 100 SP for 2000 Coins.', cost: 2000, currency: 'coins' },
         ];
         const MOCK_ACHIEVEMENTS = [ 
-            { id: 'first_mission', name: 'First Mission', description: 'Complete your first task', icon: 'fa-shoe-prints', achieved: false }, 
-            { id: 'task_master', name: 'Task Master', description: 'Complete 10 tasks', icon: 'fa-tasks', achieved: false },
-            { id: 'level_5', name: 'Ascendant', description: 'Reach Level 5', icon: 'fa-arrow-up', achieved: false }
+            { id: 'first_mission', name: 'First Mission', description: 'Complete your first task', icon: 'fa-shoe-prints', achieved: false, rarity: 'Common' }, 
+            { id: 'task_master', name: 'Task Master', description: 'Complete 10 tasks', icon: 'fa-tasks', achieved: false, rarity: 'Common' },
+            { id: 'level_5', name: 'Ascendant', description: 'Reach Level 5', icon: 'fa-arrow-up', achieved: false, rarity: 'Rare' },
+            { id: 'centurion', name: 'Centurion', description: 'Complete 100 tasks', icon: 'fa-shield-halved', achieved: false, rarity: 'Rare' },
+            { id: 'legendary_scholar', name: 'Legendary Scholar', description: 'Reach Gold League', icon: 'fa-graduation-cap', achieved: false, rarity: 'Legendary' },
+            { id: 'mythic_chronomancer', name: 'Mythic Chronomancer', description: 'Log 100 hours of study', icon: 'fa-hourglass-half', achieved: false, rarity: 'Mythic' }
         ];
         const STUDY_PASS_REWARDS = [ 
             { xp: 0, type: 'coins', value: 50 },
@@ -438,15 +467,7 @@
             { xp: 25000, type: 'sp', value: 150 },
             { xp: 35000, type: 'avatar', value: 'avatar_globe' }
         ];
-        let botsData = [
-            { name: 'Wraith', level: 22, monthlyXP: 18500, profilePicUrl: 'https://placehold.co/40x40/9333ea/ffffff?text=W' }, 
-            { name: 'Phoenix', level: 18, monthlyXP: 11200, profilePicUrl: 'https://placehold.co/40x40/be123c/ffffff?text=P' },
-            { name: 'Jett', level: 15, monthlyXP: 9800, profilePicUrl: 'https://placehold.co/40x40/16a34a/ffffff?text=J' }, 
-            { name: 'Sova', level: 12, monthlyXP: 6300, profilePicUrl: 'https://placehold.co/40x40/ca8a04/ffffff?text=S' },
-            { name: 'Raze', level: 9, monthlyXP: 3100, profilePicUrl: 'https://placehold.co/40x40/fb923c/ffffff?text=R' },
-            { name: 'Killjoy', level: 7, monthlyXP: 1500, profilePicUrl: 'https://placehold.co/40x40/facc15/ffffff?text=K' },
-        ];
-
+        
         // --- FIREBASE & STATE ---
         let app, auth, db;
         let userData;
@@ -457,6 +478,24 @@
         let incomingRequestsCache = [];
         let socialListeners = [];
         let allUsersListenerAttached = false;
+        let botsData = [];
+
+        // --- BOT GENERATION ---
+        function generateBotProfiles() {
+            if (botsData.length > 0) return; // Only generate once
+            const botNames = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"];
+            for (let i = 0; i < 200; i++) {
+                const name = `${botNames[i % botNames.length]}-${Math.floor(100 + Math.random() * 900)}`;
+                botsData.push({
+                    name: name,
+                    uid: `bot_${i}`,
+                    level: Math.floor(1 + Math.random() * 50),
+                    monthlyXP: Math.floor(Math.random() * 5000),
+                    profilePicUrl: `https://placehold.co/40x40/1f2937/ffffff?text=${name.charAt(0)}`
+                });
+            }
+        }
+        generateBotProfiles();
 
         // --- INITIALIZATION ---
         window.onload = () => {
@@ -563,6 +602,7 @@
 
                 userData = docSnap.data();
                 userData.tasksCompletedToday = userData.tasksCompletedToday || 0;
+                userData.seasonHistory = userData.seasonHistory || {};
 
                 const today = new Date().toDateString();
                 const seasonInfo = getSeasonInfo();
@@ -575,15 +615,23 @@
                     needsSave = true;
                 }
 
-                if (userData.lastSeasonId !== seasonInfo.id) {
+                if (userData.lastSeasonId && userData.lastSeasonId !== seasonInfo.id) {
+                    // Save last season's data before resetting
+                    const lastSeasonXP = userData.monthlyXP || 0;
+                    const lastSeasonLeague = LEAGUES.slice().reverse().find(l => lastSeasonXP >= l.minXP) || LEAGUES[0];
+                    userData.seasonHistory[userData.lastSeasonId] = {
+                        xp: lastSeasonXP,
+                        league: lastSeasonLeague.name
+                    };
+                    
+                    // Reset for new season
                     userData.monthlyXP = 0;
                     userData.studyPassProgress = { claimedTiers: [] };
-                    userData.lastSeasonId = seasonInfo.id;
                     needsSave = true;
                 }
 
+                userData.lastSeasonId = seasonInfo.id;
                 if(needsSave) await saveUserData();
-
 
                 if (!userData.setupComplete) {
                     document.getElementById('setup-display-name').value = userData.displayName;
@@ -636,6 +684,7 @@
                 tasks: {}, purchasedItems: [], todayXP: 0, tasksCompletedToday: 0, achievements: MOCK_ACHIEVEMENTS,
                 studyPassProgress: { claimedTiers: [] },
                 friends: [],
+                seasonHistory: {},
                 lastLoginDate: today,
                 lastQuoteDate: today,
                 lastSeasonId: seasonInfo.id
@@ -664,7 +713,8 @@
                 level: data.level,
                 uid: data.uid,
                 achievements: data.achievements,
-                equippedTitle: data.equippedTitle
+                equippedTitle: data.equippedTitle,
+                seasonHistory: data.seasonHistory || {}
              };
              await setDoc(publicRef, publicData, { merge: true });
         }
@@ -690,6 +740,21 @@
             const sp = Math.ceil(xp / 10);
             userData.tasks[today].push({ id: `task_${Date.now()}`, title, duration: hours, subject, xp, coins, sp, completed: false });
             saveUserData();
+        }
+
+        async function updatePublicActivity(duration) {
+            if(!auth.currentUser) return;
+            const today = getTodayDateString();
+            const activityRef = doc(db, `artifacts/${appId}/public/data/activity/${auth.currentUser.uid}/logs/${today}`);
+            try {
+                await setDoc(activityRef, { 
+                    tasksCompleted: increment(1),
+                    hoursStudied: increment(duration)
+                }, { merge: true });
+            } catch (e) {
+                console.error("Error updating public activity:", e);
+                // This might fail if rules aren't set up, but we won't alert for this non-critical feature.
+            }
         }
 
         function completeTask(taskId, taskDate) {
@@ -729,6 +794,7 @@
             if (taskDate === today) {
                 userData.tasksCompletedToday++;
             }
+            updatePublicActivity(task.duration);
             saveUserData();
         }
         
@@ -835,26 +901,16 @@
             document.getElementById('header-user-coins').textContent = userData.coins;
             document.getElementById('header-user-sp').textContent = userData.sp;
             document.getElementById('level-text').textContent = userData.level;
-            document.getElementById('dashboard-total-xp').textContent = userData.xp;
+            
             document.getElementById('dashboard-today-xp').textContent = userData.todayXP;
-            document.getElementById('season-number').textContent = seasonInfo.number;
-            document.getElementById('leagues-season-number').textContent = seasonInfo.number;
-            document.getElementById('dashboard-season-number').textContent = seasonInfo.number;
-            document.getElementById('calendar-season-number').textContent = seasonInfo.number;
-
+            document.getElementById('dashboard-monthly-xp').textContent = userData.monthlyXP;
+            document.getElementById('dashboard-total-xp').textContent = userData.xp;
 
             const xpForNextLevel = Math.floor(Math.pow(userData.level, 1.2) * 100);
             const percentage = xpForNextLevel > 0 ? (userData.xp / xpForNextLevel) * 100 : 0;
             document.getElementById('header-xp-bar').style.width = `${Math.min(100, percentage)}%`;
 
-            const currentTierIndex = STUDY_PASS_REWARDS.slice().reverse().findIndex(tier => userData.monthlyXP >= tier.xp);
-            const totalTiers = STUDY_PASS_REWARDS.length;
-            const displayTier = currentTierIndex === -1 ? 0 : STUDY_PASS_REWARDS.length - currentTierIndex;
-
-
-            document.getElementById('dashboard-pass-tier').textContent = `${displayTier}`;
-
-
+            
             ['header-profile-pic', 'dashboard-profile-pic', 'profile-pic'].forEach(id => document.getElementById(id).src = pfpUrl);
             
             document.getElementById('dashboard-profile-league').innerHTML = `<img src="${currentLeague.iconUrl}" class="w-6 h-6 mr-2 inline-block rounded-full"> ${currentLeague.name}`;
@@ -870,12 +926,33 @@
                 profileTitleEl.style.display = 'none';
             }
 
+            // Dashboard Pass UI Update
+            document.getElementById('dashboard-season-number').textContent = seasonInfo.number;
+            const unlockedTiersCount = STUDY_PASS_REWARDS.filter(tier => userData.monthlyXP >= tier.xp).length;
+            document.getElementById('dashboard-pass-tier').textContent = unlockedTiersCount;
+
+            let passProgressPercent = 100;
+            let passXpText = "Max Tier Reached";
+
+            if (unlockedTiersCount < STUDY_PASS_REWARDS.length) {
+                const currentTierXP = unlockedTiersCount > 0 ? STUDY_PASS_REWARDS[unlockedTiersCount - 1].xp : 0;
+                const nextTierXP = STUDY_PASS_REWARDS[unlockedTiersCount].xp;
+                const xpTowardsNext = userData.monthlyXP - currentTierXP;
+                const xpNeededForNext = nextTierXP - currentTierXP;
+                passProgressPercent = (xpTowardsNext / xpNeededForNext) * 100;
+                passXpText = `${xpTowardsNext} / ${xpNeededForNext} XP to next tier`;
+            }
+            
+            document.getElementById('dashboard-pass-progress').style.width = `${passProgressPercent}%`;
+            document.getElementById('dashboard-pass-xp-text').textContent = passXpText;
+
 
             renderTasks();
             renderShop();
             renderStudyPass();
             renderAchievements();
             updateDailyQuote();
+            renderLeaderboard(); // Call this to update dashboard rank
         }
         
         function renderTasks(dateString) {
@@ -912,27 +989,39 @@
 
         function renderLeaderboard() {
             const container = document.getElementById('leaderboard-body');
+            const rankEl = document.getElementById('dashboard-rank');
             if (!container) return;
 
             const usersFromDB = [...allUsersCache];
 
-            botsData.forEach(bot => {
+            botsData.forEach((bot, index) => {
                 const lastUpdate = localStorage.getItem(`bot_update_${bot.name}`);
                 const today = new Date().toDateString();
                 if (lastUpdate !== today) {
-                    bot.monthlyXP += Math.floor(Math.random() * (200 - 30 + 1)) + 30;
+                     let dailyGain;
+                    if (index < 100) { // 50% are less competitive
+                        dailyGain = Math.floor(Math.random() * (120 - 50 + 1)) + 50; // 50-120 XP
+                    } else { // 50% are more competitive
+                        dailyGain = Math.floor(Math.random() * (200 - 120 + 1)) + 120; // 120-200 XP
+                    }
+                    bot.monthlyXP += dailyGain;
+                    bot.monthlyXP = Math.min(bot.monthlyXP, 5000); // Cap XP at 5000
+                    if (Math.random() > 0.8) bot.level += 1;
                     localStorage.setItem(`bot_update_${bot.name}`, today);
                 }
             });
             
             const allPlayers = [...usersFromDB, ...botsData];
             allPlayers.sort((a, b) => b.monthlyXP - a.monthlyXP);
+            
+            const userRank = allPlayers.findIndex(p => p.uid === auth.currentUser?.uid) + 1;
+            if(rankEl && userRank > 0) rankEl.textContent = `#${userRank}`;
+            else if (rankEl) rankEl.textContent = 'N/A';
 
             container.innerHTML = '';
             allPlayers.forEach((player, index) => {
                 const playerLeague = LEAGUES.slice().reverse().find(l => player.monthlyXP >= l.minXP) || LEAGUES[0];
-                const currentTierIndex = STUDY_PASS_REWARDS.slice().reverse().findIndex(tier => player.monthlyXP >= tier.xp);
-                 const displayTier = currentTierIndex === -1 ? 0 : STUDY_PASS_REWARDS.length - currentTierIndex;
+                const displayTier = STUDY_PASS_REWARDS.filter(tier => player.monthlyXP >= tier.xp).length;
 
                 const row = document.createElement('tr');
                 row.className = `border-b border-cyan-300/10 ${player.uid === auth.currentUser?.uid ? 'bg-cyan-500/20 text-white' : ''}`;
@@ -1083,7 +1172,7 @@
                 const isClaimed = userData.studyPassProgress.claimedTiers.includes(index);
                 const isUnlocked = userData.monthlyXP >= tier.xp;
                 const tierEl = document.createElement('div');
-                const displayTierNumber = STUDY_PASS_REWARDS.length - index;
+                const displayTierNumber = index + 1;
 
                 tierEl.className = `cyber-card p-4 rounded-lg text-center ${!isUnlocked ? 'opacity-50 grayscale' : ''}`;
 
@@ -1114,8 +1203,12 @@
             const container = document.getElementById('achievements-container');
             if (!container || !userData.achievements) return;
             container.innerHTML = '';
+            
+            const rarityOrder = { 'Mythic': 1, 'Legendary': 2, 'Rare': 3, 'Common': 4 };
 
-            userData.achievements.forEach(achievement => {
+            const sortedAchievements = [...userData.achievements].sort((a,b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
+
+            sortedAchievements.forEach(achievement => {
                 const achEl = document.createElement('div');
                 achEl.className = `cyber-card p-4 rounded-lg text-center ${!achievement.achieved ? 'opacity-50 grayscale' : ''}`;
                 achEl.innerHTML = `
@@ -1127,6 +1220,44 @@
                 container.appendChild(achEl);
             });
         }
+        
+        function renderSeasonHistory() {
+            const container = document.getElementById('season-history-container');
+            if (!container || !userData || !userData.seasonHistory) {
+                if(container) container.innerHTML = '<p class="text-gray-400">No season history available.</p>';
+                return;
+            };
+
+            const history = userData.seasonHistory;
+            const seasonIds = Object.keys(history).sort().reverse(); // Show latest season first
+
+            if (seasonIds.length === 0) {
+                container.innerHTML = '<p class="text-gray-400">No season history available.</p>';
+                return;
+            }
+
+            container.innerHTML = '';
+            seasonIds.forEach(seasonId => {
+                const seasonData = history[seasonId];
+                const [year, month] = seasonId.split('-');
+                const seasonDate = new Date(year, month);
+                const seasonName = seasonDate.toLocaleString('default', { month: 'long', year: 'numeric' });
+
+                const historyEl = document.createElement('div');
+                historyEl.className = 'cyber-card p-4 rounded-lg flex items-center justify-between';
+                historyEl.innerHTML = `
+                    <div>
+                        <h4 class="font-bold text-lg text-white">${seasonName}</h4>
+                        <p class="text-sm text-gray-400">Highest League: <span class="font-semibold text-cyan-300">${seasonData.league}</span></p>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-lg font-bold font-orbitron text-white">${seasonData.xp} XP</p>
+                    </div>
+                `;
+                container.appendChild(historyEl);
+            });
+        }
+
 
         function updateDailyQuote() {
             const today = new Date().toDateString();
@@ -1252,8 +1383,8 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             const acceptedQuery = query(requestsRef, where("senderId", "==", auth.currentUser.uid), where("status", "==", "accepted"));
             const unsubAccepted = onSnapshot(acceptedQuery, 
                 (snapshot) => {
-                    snapshot.docs.forEach(async (doc) => {
-                        const request = doc.data();
+                    snapshot.docs.forEach(async (requestDoc) => {
+                        const request = requestDoc.data();
                         const friends = userData.friends || [];
                         if (!friends.includes(request.receiverId)) {
                             const userRef = doc(db, `artifacts/${appId}/users/${auth.currentUser.uid}/profile/data`);
@@ -1261,7 +1392,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                                 friends: arrayUnion(request.receiverId)
                             });
                         }
-                        await deleteDoc(doc.ref);
+                        await deleteDoc(requestDoc.ref);
                     });
                 },
                 (error) => {
@@ -1465,8 +1596,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             
             const userLeague = LEAGUES.slice().reverse().find(l => user.monthlyXP >= l.minXP) || LEAGUES[0];
 
-            const currentTierIndex = STUDY_PASS_REWARDS.slice().reverse().findIndex(tier => user.monthlyXP >= tier.xp);
-            const displayTier = currentTierIndex === -1 ? 0 : STUDY_PASS_REWARDS.length - currentTierIndex;
+            const displayTier = STUDY_PASS_REWARDS.filter(tier => user.monthlyXP >= tier.xp).length;
 
             const equippedTitle = SHOP_ITEMS.find(item => item.id === user.equippedTitle && item.type === 'title');
             const titleHTML = equippedTitle ? `<span class="ml-4 text-lg font-bold bg-gradient-to-r from-purple-400 to-pink-500 text-white px-3 py-1 rounded-full">${equippedTitle.name.replace('Title: ', '')}</span>` : '';
@@ -1505,6 +1635,9 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             
             const achievementsContainer = content.querySelector('#modal-achievements-container');
             const userAchievements = user.achievements || [];
+            const rarityOrder = { 'Mythic': 1, 'Legendary': 2, 'Rare': 3, 'Common': 4 };
+            userAchievements.sort((a,b) => (rarityOrder[a.rarity] || 5) - (rarityOrder[b.rarity] || 5));
+
              userAchievements.forEach(achievement => {
                 const achEl = document.createElement('div');
                 achEl.className = `cyber-card p-3 rounded-lg text-center ${!achievement.achieved ? 'opacity-40 grayscale' : ''}`;
@@ -1598,7 +1731,10 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                     if (targetId === 'calendar') renderCalendar();
                     if (targetId === 'leagues') renderLeaguesPage();
                     if (targetId === 'leaderboard') renderLeaderboard();
-                    if (targetId === 'profile') renderAchievements(); 
+                    if (targetId === 'profile') {
+                        renderAchievements();
+                        renderSeasonHistory();
+                    }
                     if (targetId === 'inventory') renderInventoryPage();
                     if (targetId === 'pass') renderStudyPass();
                     if (targetId === 'shop') renderShop();
