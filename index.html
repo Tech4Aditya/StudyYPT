@@ -494,17 +494,24 @@
             if (botsData.length > 0) return; // Only generate once
             const botNames = ["Alpha", "Bravo", "Charlie", "Delta", "Echo", "Foxtrot", "Golf", "Hotel", "India", "Juliett", "Kilo", "Lima", "Mike", "November", "Oscar", "Papa", "Quebec", "Romeo", "Sierra", "Tango", "Uniform", "Victor", "Whiskey", "X-ray", "Yankee", "Zulu"];
             const genericAvatars = AVATAR_OPTIONS.filter(a => !a.id.includes('league') && a.id !== 'default');
+            const botTitles = SHOP_ITEMS.filter(item => item.type === 'title');
             
             for (let i = 0; i < 1000; i++) {
                 const name = `${botNames[i % botNames.length]}-${Math.floor(100 + Math.random() * 900)}`;
                 const randomAvatar = genericAvatars[Math.floor(Math.random() * genericAvatars.length)];
+                let equippedTitle = null;
+                if (Math.random() < 0.3) { // 30% chance of having a title
+                    equippedTitle = botTitles[Math.floor(Math.random() * botTitles.length)].id;
+                }
+                
                 botsData.push({
                     name: name,
                     uid: `bot_${i}`,
                     isBot: true,
                     level: Math.floor(1 + Math.random() * 50),
                     monthlyXP: Math.floor(Math.random() * 5000),
-                    profilePicUrl: randomAvatar.url
+                    profilePicUrl: randomAvatar.url,
+                    equippedTitle: equippedTitle
                 });
             }
         }
@@ -745,6 +752,7 @@
                 monthlyXP: data.monthlyXP,
                 level: data.level,
                 uid: data.uid,
+                totalXP: data.totalXP || 0,
                 achievements: data.achievements,
                 equippedTitle: data.equippedTitle,
                 seasonHistory: data.seasonHistory || {}
@@ -1038,7 +1046,7 @@
                 const today = new Date().toDateString();
                 if (lastUpdate !== today) {
                      let dailyGain;
-                    if (index < 100) { // 50% are less competitive
+                    if (index < 500) { // 50% are less competitive
                         dailyGain = Math.floor(Math.random() * (120 - 50 + 1)) + 50; // 50-120 XP
                     } else { // 50% are more competitive
                         dailyGain = Math.floor(Math.random() * (200 - 120 + 1)) + 120; // 120-200 XP
@@ -1635,6 +1643,11 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
             const modal = document.getElementById('user-profile-modal');
             const content = document.getElementById('user-profile-content');
             
+            const allPlayers = [...allUsersCache, ...botsData];
+            allPlayers.sort((a, b) => b.monthlyXP - a.monthlyXP);
+            const rank = allPlayers.findIndex(p => p.uid === userId || p.id === userId) + 1;
+
+
             const userLeague = LEAGUES.slice().reverse().find(l => user.monthlyXP >= l.minXP) || LEAGUES[0];
 
             const displayTier = STUDY_PASS_REWARDS.filter(tier => user.monthlyXP >= tier.xp).length;
@@ -1657,13 +1670,21 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                     </div>
                 </div>
 
-                <div class="grid grid-cols-2 gap-4 mt-6">
-                    <div class="cyber-card p-3 rounded-lg">
-                        <p class="text-sm text-cyan-300">Monthly XP</p>
-                        <p class="text-xl font-bold font-orbitron text-white">${user.monthlyXP}</p>
+                <div class="mt-6 grid grid-cols-2 gap-4">
+                    <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-pink-900/50 to-gray-900/30">
+                        <p class="text-sm text-pink-300 flex items-center justify-center gap-2"><i class="fas fa-moon"></i> Monthly</p>
+                        <p class="text-xl font-bold font-orbitron text-white">${user.monthlyXP || 0}</p>
                     </div>
-                     <div class="cyber-card p-3 rounded-lg">
-                        <p class="text-sm text-cyan-300">Study Pass Tier</p>
+                     <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-yellow-900/50 to-gray-900/30">
+                        <p class="text-sm text-yellow-300 flex items-center justify-center gap-2"><i class="fas fa-fire"></i> Total</p>
+                        <p class="text-xl font-bold font-orbitron text-white">${user.totalXP || 0}</p>
+                    </div>
+                     <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-purple-900/50 to-gray-900/30">
+                        <p class="text-sm text-purple-300 flex items-center justify-center gap-2"><i class="fas fa-trophy"></i> Rank</p>
+                        <p class="text-xl font-bold font-orbitron text-white">${rank > 0 ? `#${rank}` : 'N/A'}</p>
+                    </div>
+                    <div class="cyber-card p-3 rounded-lg text-center bg-gradient-to-br from-green-900/50 to-gray-900/30">
+                        <p class="text-sm text-green-300 flex items-center justify-center gap-2"><i class="fas fa-gem"></i> Pass Tier</p>
                         <p class="text-xl font-bold font-orbitron text-white">${displayTier}</p>
                     </div>
                 </div>
@@ -1671,7 +1692,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                  <h4 class="text-2xl font-bold mt-6 mb-3 text-white font-orbitron">Achievements</h4>
                 <div id="modal-achievements-container" class="grid grid-cols-3 gap-3"></div>
                 
-                <p class="text-xs text-gray-500 mt-6 text-center">Note: Mission history is private and not visible to other operatives.</p>
+                <p class="text-xs text-gray-500 mt-6 text-center">Note: Mission history and daily XP are private and not visible to other operatives.</p>
             `;
             
             const achievementsContainer = content.querySelector('#modal-achievements-container');
