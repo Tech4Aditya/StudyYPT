@@ -257,20 +257,22 @@
                                 <p id="quote-text" class="text-lg italic text-gray-300"></p>
                                 <p id="quote-author" class="text-right font-semibold text-cyan-300 mt-2"></p>
                             </div>
-                            <!-- NEW: Upcoming Events -->
-                            <div class="cyber-card p-6 rounded-lg">
+                        </div>
+                        <div class="lg:col-span-2 space-y-8"> {/* Added space between missions and events */}
+                             <div> {/* Container for Missions */}
+                                <div class="flex justify-between items-center mb-4">
+                                    <h3 class="text-3xl font-bold text-white font-orbitron">Today's Missions</h3>
+                                    <button id="add-task-btn" class="cyber-button text-cyan-300 font-bold py-2 px-4 rounded-lg flex items-center gap-2"><i class="fas fa-plus"></i> Add Task</button>
+                                </div>
+                                <div id="daily-tasks-container" class="space-y-4"></div>
+                             </div>
+                              <!-- MOVED: Upcoming Events -->
+                             <div class="cyber-card p-6 rounded-lg">
                                 <h3 class="text-2xl font-bold text-white font-orbitron mb-4 text-purple-300 event-text-glow">Upcoming Events</h3>
                                 <div id="dashboard-events-container" class="space-y-3 max-h-64 overflow-y-auto">
                                     <!-- Events will be injected here by JS -->
                                 </div>
-                            </div>
-                        </div>
-                        <div class="lg:col-span-2">
-                             <div class="flex justify-between items-center mb-4">
-                                <h3 class="text-3xl font-bold text-white font-orbitron">Today's Missions</h3>
-                                <button id="add-task-btn" class="cyber-button text-cyan-300 font-bold py-2 px-4 rounded-lg flex items-center gap-2"><i class="fas fa-plus"></i> Add Task</button>
-                            </div>
-                            <div id="daily-tasks-container" class="space-y-4"></div>
+                             </div>
                         </div>
                     </div>
                 </div>
@@ -2265,13 +2267,31 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
                 listEl.innerHTML = '<p class="text-gray-400 text-center p-4">This league is currently empty.</p>';
             } else {
                 playersInLeague.forEach((player, index) => {
+                    // --- Get Title Icon HTML ---
+                    let titleIconHTML = '';
+                    if(player.isBot){
+                         titleIconHTML = `<i class="fas fa-microchip text-gray-500 ml-2"></i>`;
+                    } else {
+                        const equippedTitle = SHOP_ITEMS.find(item => item.id === player.equippedTitle && item.type === 'title');
+                        if (equippedTitle) {
+                            let iconClass = 'text-cyan-400'; // Default
+                            if (equippedTitle.id === 'title_founder') iconClass = 'founder-title';
+                            if (equippedTitle.id === 'title_verified') iconClass = 'verified-title';
+                            titleIconHTML = `<i class="fas ${equippedTitle.icon} ${iconClass} ml-2"></i>`;
+                        }
+                    }
+                    // --- End Title Icon HTML ---
+
                     const playerEl = document.createElement('div');
                     playerEl.className = 'cyber-card p-3 rounded-lg flex items-center justify-between';
                     playerEl.innerHTML = `
                         <div class="flex items-center gap-4">
                             <span class="font-bold font-orbitron text-lg w-8 text-center">${index + 1}</span>
                             <img src="${player.profilePicUrl || ''}" class="w-10 h-10 rounded-full object-cover">
-                            <span class="font-semibold">${player.displayName || player.name}</span>
+                             <div class="flex items-center"> <!-- Ensure name and icon are grouped -->
+                                <span class="font-semibold">${player.displayName || player.name}</span>
+                                ${titleIconHTML} <!-- Display the icon -->
+                            </div>
                         </div>
                         <span class="font-bold font-orbitron text-cyan-300">${player.monthlyXP || 0} XP</span>
                     `;
@@ -2281,6 +2301,7 @@ match /artifacts/{appId}/public/data/friend_requests/{requestId} {
 
             modal.style.display = 'flex';
         }
+
 
         // --- NEW/MODIFIED TASK & MODAL FUNCTIONS ---
         function openAddTaskModal(dateString) {
